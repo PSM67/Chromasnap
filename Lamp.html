@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChromaSnap</title>
+
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+
+body{
+margin:0;
+font-family:Kanit,sans-serif;
+background:linear-gradient(135deg,#eef1ff,#ffffff);
+}
+
+.wrap{
+padding:20px;
+}
+
+.head{
+font-size:26px;
+font-weight:bold;
+margin-left:50px;
+color:#4f4ad8;
+}
+
+.discribe{
+font-size:18px;
+color:#4f4ad8;
+opacity:0.7;
+margin-top:-10px;
+margin-left:50px;
+border-bottom:1px solid #4f4ad8;
+padding-bottom:5px;
+}
+
+.btn{
+position:absolute;
+right:40px;
+top:70px;
+}
+
+.btn a{
+color:#4f4ad8;
+text-decoration:none;
+}
+
+.UP{
+display:flex;
+align-items:center;
+justify-content:center;
+
+margin:auto;
+margin-top:40px;
+
+width:320px;
+height:420px;
+
+border:3px dashed #4f4ad8;
+border-radius:18px;
+
+background:white;
+overflow:hidden;
+
+position: relative;
+
+}
+
+.UP:hover{
+transform:translateY(-5px);
+}
+
+button{
+margin-top:15px;
+padding:10px 25px;
+border:none;
+border-radius:8px;
+background:#4f4ad8;
+color:white;
+font-family:Kanit;
+cursor:pointer;
+}
+
+#preview{
+width:100%;
+height:100%;
+object-fit:cover;   /* รูปเต็มกรอบเหมือนกล้อง */
+border-radius:10px;
+display:none;
+}
+
+/* 📱 MOBILE RESPONSIVE */
+
+@media (max-width:600px){
+
+.wrap{
+padding:15px;
+}
+
+/* header */
+
+.head{
+margin-left:10px;
+font-size:22px;
+}
+
+.discribe{
+margin-left:10px;
+font-size:15px;
+border-bottom:1px solid #4f4ad8;
+}
+
+/* back button */
+
+.btn{
+position:absolute;
+top:20px;
+right:15px;
+}
+
+/* upload box */
+
+.UP{
+width:92%;
+height:260px;
+margin-top:30px;
+border-radius:15px;
+}
+
+/* preview image */
+
+#preview{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+/* file input + buttons */
+
+.controls{
+flex-direction:column;
+align-items:center;
+gap:10px;
+margin-top:15px;
+}
+
+#imgIN{
+width:90%;
+}
+
+button{
+width:90%;
+padding:12px;
+font-size:16px;
+}
+
+/* select pathogen */
+
+.selecting{
+position:static;
+width:90%;
+margin:20px auto;
+text-align:center;
+}
+
+#resultSelect{
+width:100%;
+}
+
+/* result card */
+
+.result{
+width:90%;
+padding:18px;
+margin-top:15px;
+}
+
+#resultText{
+font-size:16px;
+}
+
+/* history */
+
+.history{
+margin-top:25px;
+font-size:16px;
+}
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<div class="head">
+    <h3>ChromaSnap</h3>
+</div>
+
+<div class="discribe">
+    <p>Lamp color Detection Mode</p>
+</div>
+
+<div class="btn">
+    <a href="homepage.html">← back</a>
+</div>
+
+</div>
+
+
+<div class="UP">
+    <img id="preview">
+</div>
+
+<form id="uploadForm1" class="controls">
+    <input type="file" id="imgIN" accept="image/*">
+    <button type="submit" class="upload">Measure</button>
+    <button type="button" onclick="uploadFile()" class="save">Save</button>
+</form>
+
+<div class ="selecting">
+    <label for="resultSelect">Select a type of pathogen : </label>
+    <select id="resultSelect" required>
+        <option value="" disabled selected>Choose</option>
+        <option value="oxa">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+    </select>
+</div>
+
+<div class="result">
+    <h3>Detection Result :</h3>
+    <span id="tpn">pathogen : <span id="type">pos</span></span><br>
+    <p class="conc" >concentration (ng/μL) : <span id="conc">2</span></p>
+    <div id="result"></div>
+</div>
+
+<div class="history">
+    <a href="history.html">history →</a>
+</div>
+
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+    const supabase = createClient(
+        "https://dmuxjdpfvhnenxvpcemd.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtdXhqZHBmdmhuZW54dnBjZW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDU4MjAsImV4cCI6MjA4ODc4MTgyMH0.BeJcnNblEK6zkMsbiIAm3OSbnGHWP_GYTKjqFoKOIbc"
+    )
+    const BUCKET = "Chromasnap"
+    const TABLE = "Chromasnaptab"
+    const input = document.getElementById("imgIN")
+    const preview = document.getElementById("preview")
+
+    async function uploadFile(){
+      const file = document.getElementById("imgIN").files[0]
+      const conc = document.getElementById("conc").innerText
+      const type = document.getElementById("type").innerText
+      const select = document.getElementById("resultSelect")
+
+      const selectedValue = select.value
+
+      if(!file){ alert("Please select file"); return }
+
+      const filename = Date.now() + "_" + file.name
+
+      const { data: fileData, error: fileError } = await supabase.storage
+        .from(BUCKET)
+        .upload(filename, file)
+
+       if(fileError){ alert(fileError.message); return }
+
+       const { error } = await supabase
+        .from(TABLE)
+        .insert([{
+        filename: filename,
+        conc: conc,
+        type: type,
+        date: new Date().toISOString(),
+        pathogen: selectedValue
+        }])
+
+        if(error){ 
+            alert(error.message);
+            return }
+ 
+        alert("Save success")
+    }
+window.uploadFile = uploadFile
+
+
+input.addEventListener("change", function(){
+
+const file = this.files[0]
+
+if(file){
+
+const reader = new FileReader()
+
+reader.onload = function(e){
+preview.src = e.target.result
+preview.style.display = "block"
+}
+
+reader.readAsDataURL(file)
+
+}
+
+})
+document.getElementById("uploadForm1").addEventListener("submit",function(e){
+
+e.preventDefault()
+
+})
+
+document.getElementById("uploadForm1").onsubmit = async function(e){
+
+e.preventDefault()
+
+let file = document.getElementById("imgIN").files[0]
+
+let formData = new FormData()
+formData.append("image",file)
+
+let res = await fetch("/predict",{
+method:"POST",
+body:formData
+})
+
+let data = await res.json()
+
+document.getElementById("result").innerText = data.value
+}
+</script>
+
+</body>
+</html>
