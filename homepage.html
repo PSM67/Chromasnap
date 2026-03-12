@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromasnap</title>
+</head>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+
+    .wrap{
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .logo{
+        width: 100px;
+        height: 100px;
+        background-color: #4f4ad8;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        font-weight: bold;
+        border-radius: 50%;
+        font-family: Prompt, sans-serif;
+    }
+    .head{
+        font-size: 26px;
+        font-weight: bold;
+        color: #4f4ad8;
+        font-family: Prompt, sans-serif;
+    }
+    .discribe{
+        margin-top: -30px;
+        font-size: 18px;
+        color: #4f4ad8;
+        font-family: Kanit, sans-serif;
+    }
+    .btnSp{
+        width: 250px;
+        margin-top: 20px;
+        background: #4f4ad8;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        font-size: 16px;
+        font-family: 'Prompt', sans-serif;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        text-align: center;
+    }
+    .btnSp:hover{
+        background: #3f3da7;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        scale: 1.075;
+    }
+    .btnLp{
+        width: 250px;
+        margin-top: 20px;
+        background: #4f4ad8;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        font-size: 16px;
+        font-family: 'Prompt', sans-serif;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        text-align: center;
+    }
+    .btnLp:hover{
+        background: #3f3da7;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        scale: 1.075;
+    }
+    .btn{
+        color: rgb(124, 124, 124);
+        justify-content: center;
+        margin-top: 35px;
+        font-size: 16px;
+        font-family: 'Prompt', sans-serif;
+        text-align: center;
+    }
+
+    .btn a{
+        color: rgb(124, 124, 124);
+        text-decoration: none;  
+    }
+
+    .btnLp a, .btnSp a{
+        text-decoration: none;
+        color: #ffffff;  
+    }
+    
+    body{
+        margin:0;
+        background:#ffffff;
+        overflow:hidden;
+    }
+
+    .dna-bg{
+        position:fixed;
+        width:100%;
+        height:100%;
+        pointer-events: none;
+    }
+
+    .dna-bg span{
+        position:absolute;
+        width:6px;
+        height:6px;
+        background:rgb(0, 0, 0);
+        border-radius:50%;
+        opacity:0.5;
+        animation: move 5s linear infinite;
+    }
+
+    /* กระจายตำแหน่ง */
+    .dna-bg span:nth-child(1){top:10%; animation-delay:0s;}
+    .dna-bg span:nth-child(2){top:20%; animation-delay:1s;}
+    .dna-bg span:nth-child(3){top:30%; animation-delay:2s;}
+    .dna-bg span:nth-child(4){top:40%; animation-delay:3s;}
+    .dna-bg span:nth-child(5){top:50%; animation-delay:4s;}
+    .dna-bg span:nth-child(6){top:60%; animation-delay:5s;}
+    .dna-bg span:nth-child(7){top:70%; animation-delay:6s;}
+    .dna-bg span:nth-child(8){top:80%; animation-delay:7s;}
+
+    @keyframes move{
+    from{
+        left:-10%;
+      }
+    to{
+        left:110%;
+      }
+    }
+
+</style>
+<body>
+    <div class="wrap">
+         <div class="dna-bg">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="head">
+            <h2 >Select Mode</h1>
+        </div>
+            <div class="discribe">
+                <p>-please select a detection mode-</p>
+            </div>
+        <div class="btnSp">
+            <a href="Strip.html">Strip Detection</a>
+        </div>    
+        <div class="btnLp">
+            <a href="Lamp.html">Lamp Color Detection</a>
+        </div>
+        <div class="btn">
+            <a href="Chromasnap.html">← BACK</a>
+        </div>
+       
+</body>
+</html>

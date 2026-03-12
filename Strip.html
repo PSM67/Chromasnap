@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChromaSnap</title>
+
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+
+body{
+margin:0;
+font-family:Kanit,sans-serif;
+background:linear-gradient(135deg,#eef1ff,#ffffff);
+}
+
+.wrap{
+padding:20px;
+}
+
+.head{
+font-size:26px;
+font-weight:bold;
+margin-left:50px;
+color:#4f4ad8;
+}
+
+.discribe{
+font-size:18px;
+color:#4f4ad8;
+opacity:0.7;
+margin-top:-10px;
+margin-left:50px;
+border-bottom:1px solid #4f4ad8;
+padding-bottom:5px;
+}
+
+.btn{
+position:absolute;
+right:40px;
+top:70px;
+}
+
+.btn a{
+color:#4f4ad8;
+text-decoration:none;
+}
+
+.UP{
+display:flex;
+align-items:center;
+justify-content:center;
+
+margin:auto;
+margin-top:40px;
+
+width:320px;
+height:420px;
+
+border:3px dashed #4f4ad8;
+border-radius:18px;
+
+background:white;
+overflow:hidden;
+}
+
+.UP:hover{
+transform:translateY(-5px);
+}
+
+button{
+margin-top:15px;
+padding:10px 25px;
+border:none;
+border-radius:8px;
+background:#4f4ad8;
+color:white;
+font-family:Kanit;
+cursor:pointer;
+}
+
+#preview{
+width:100%;
+height:100%;
+object-fit:cover;   /* รูปเต็มกรอบเหมือนกล้อง */
+border-radius:10px;
+display:none;
+}
+
+
+/* 📱 MOBILE RESPONSIVE */
+
+@media (max-width:600px){
+
+.head{
+margin-left:20px;
+font-size:22px;
+}
+
+.discribe{
+margin-left:20px;
+width:auto;
+font-size:16px;
+}
+
+.btn{
+right:20px;
+top:30px;
+}
+
+.UP{
+width:90%;
+height:auto;
+padding:30px;
+margin-top:80px;
+}
+
+#preview{
+max-width:100%;
+}
+
+}
+
+.controls{
+display:flex;
+justify-content:center;
+gap:15px;
+margin-top:20px;
+}
+
+#imgIN{
+font-family:Kanit;
+}
+
+button{
+padding:10px 25px;
+border:none;
+border-radius:8px;
+background:#4f4ad8;
+color:white;
+font-family:Kanit;
+cursor:pointer;
+}
+
+.upload {
+    margin-left: -100px;
+    margin-top: -10px;
+}
+.result{
+width:320px;
+margin:30px auto;
+padding:20px;
+
+background:white;
+border-radius:18px;
+box-shadow:0 10px 30px rgba(0,0,0,0.08);
+
+text-align:center;
+}
+
+.result h3{
+margin-top:0;
+color:#4f4ad8;
+}
+
+#resultText{
+font-size:18px;
+color:#333;
+margin-top:10px;
+}
+
+
+
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<div class="head">
+    <h3>ChromaSnap</h3>
+</div>
+
+<div class="discribe">
+    <p>Strip Detection Mode</p>
+</div>
+
+<div class="btn">
+    <a href="homepage.html">← BACK</a>
+</div>
+
+</div>
+
+
+<div class="UP">
+    <img id="preview">
+</div>
+
+<form id="uploadForm" class="controls">
+    <input type="file" id="imgIN" accept="image/*">
+    <button type="submit" class="upload">Measure</button>
+</form>
+
+<div class="result">
+    <h3>Detection Result</h3>
+    <div id="resultText"></div>
+</div>
+
+
+<script>
+
+const input = document.getElementById("imgIN")
+const preview = document.getElementById("preview")
+
+input.addEventListener("change", function(){
+
+const file = this.files[0]
+
+if(file){
+
+const reader = new FileReader()
+
+reader.onload = function(e){
+preview.src = e.target.result
+preview.style.display = "block"
+}
+
+reader.readAsDataURL(file)
+
+}
+
+})
+document.getElementById("uploadForm").addEventListener("submit",function(e){
+
+e.preventDefault()
+
+document.getElementById("resultText").innerText = "Processing..."
+
+setTimeout(()=>{
+document.getElementById("resultText").innerText = "Strip Detected"
+},1500)
+
+})
+
+document.getElementById("uploadForm").onsubmit = async function(e){
+
+e.preventDefault()
+
+let file = document.getElementById("imageInput").files[0]
+
+let formData = new FormData()
+formData.append("image",file)
+
+let res = await fetch("/predict",{
+method:"POST",
+body:formData
+})
+
+let data = await res.json()
+
+document.getElementById("result").innerText = data.value
+}
+</script>
+
+</body>
+</html>
