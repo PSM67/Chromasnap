@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_PATH = r"D:\work\Aj Ying\dna_concentration.pkl"
+MODEL_PATH = "dna_concentration.pkl"
 model = joblib.load(MODEL_PATH)
 def compute_channel_stats(roi_img, prefix):
 
