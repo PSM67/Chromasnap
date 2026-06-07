@@ -10,7 +10,11 @@ import joblib
 from skimage.color import rgb2lab, rgb2hsv
 
 app = FastAPI()
-
+def root():
+    return {
+        "status": "ok",
+        "message": "ChromaSnap API is running"
+    }
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
