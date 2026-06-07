@@ -338,12 +338,14 @@ async function measure(){
 
     try{
 
-        let res = await fetch("https://chromasnap.onrender.com/predict"),
+        let res = await fetch("https://color-gryp.onrender.com/predict"),
             {
                 method:"POST",
                 body:formData
-            }
-        )
+            })
+        if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+        }
 
         let data = await res.json()
 
