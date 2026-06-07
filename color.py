@@ -10,6 +10,7 @@ import joblib
 from skimage.color import rgb2lab, rgb2hsv
 
 app = FastAPI()
+@app.get("/")
 def root():
     return {
         "status": "ok",
