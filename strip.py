@@ -11,7 +11,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 app = FastAPI()
-
+def root():
+    return {
+        "status": "ok",
+        "message": "ChromaSnap API is running"
+    }
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
