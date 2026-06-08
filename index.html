@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chromasnap</title>
     <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4f4ad8">
+    <meta name="theme-color" content="#4f4ad8">
 </head>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap');
@@ -127,7 +127,7 @@
          CS
          </div>
         <div class="head">
-            <h1 >ChromaSnap</h1>
+            <h1>ChromaSnap</h1>
         </div>
             <div class="discribe">
                 <p>Welcome to ChromaSnap</p>
@@ -135,6 +135,16 @@
         <div class="btn">
             <a href="homepage.html">START</a>
         </div>
-       
+    </div>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registered!', reg))
+            .catch(err => console.error('Service Worker registration failed: ', err)); // Fix: change .err to .error
+        });
+      }
+    </script>
 </body>
 </html>
