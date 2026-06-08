@@ -1,0 +1,494 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChromaSnap</title>
+
+    <style>
+
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+
+    body{
+    margin:0;
+    font-family:Kanit,sans-serif;
+    background:linear-gradient(135deg,#eef1ff,#ffffff);
+    }
+
+    .wrap{
+    padding:20px;
+    }
+
+    .head{
+    font-size:26px;
+    font-weight:bold;
+    margin-left:50px;
+    color:#4f4ad8;
+    }
+
+    .discribe{
+    font-size:18px;
+    color:#4f4ad8;
+    opacity:0.7;
+    margin-top:-10px;
+    margin-left:50px;
+    border-bottom:1px solid #4f4ad8;
+    padding-bottom:5px;
+    }
+
+    .btn{
+    position:absolute;
+    right:40px;
+    top:70px;
+    }
+
+    .btn a{
+    color:#4f4ad8;
+    text-decoration:none;
+    }
+
+    .UP{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    margin:auto;
+    margin-top:40px;
+
+    width:320px;
+    height:420px;
+
+    border:3px dashed #4f4ad8;
+    border-radius:18px;
+
+    background:white;
+    overflow:hidden;
+    position: relative;
+    }
+
+    .UP:hover{
+    transform:translateY(-5px);
+    }
+
+    button{
+    margin-top:15px;
+    padding:10px 25px;
+    border:none;
+    border-radius:8px;
+    background:#4f4ad8;
+    color:white;
+    font-family:Kanit;
+    cursor:pointer;
+    }
+
+    #preview{
+    width:100%;
+    height:100%;
+    object-fit:contain;   
+    border-radius:10px;
+    display:none;
+    }
+
+
+    /* 📱 MOBILE RESPONSIVE */
+
+    @media (max-width:600px){
+
+    .head{
+    margin-left:20px;
+    font-size:22px;
+    }
+
+    .discribe{
+    margin-left:20px;
+    width:auto;
+    font-size:16px;
+    }
+
+    .btn{
+    right:20px;
+    top:30px;
+    }
+
+    .UP{
+    width:90%;
+    height:auto;
+    padding:30px;
+    margin-top:80px;
+    }
+
+    #preview{
+    max-width:100%;
+    }
+
+    }
+
+    .controls{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-top:20px;
+    }
+
+    #imgIN{
+    font-family:Kanit;
+    }
+
+    button{
+    padding:10px 25px;
+    border:none;
+    border-radius:8px;
+    background:#4f4ad8;
+    color:white;
+    font-family:Kanit;
+    cursor:pointer;
+    }
+
+    .upload {
+        margin-left: -100px;
+        margin-top: -10px;
+        height: 40px;
+    }
+    .result{
+    width:320px;
+    margin:30px auto;
+    padding:20px;
+
+    background:white;
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+
+    text-align:center;
+    }
+        
+    .result h3{
+    margin-top:0;
+    color:#4f4ad8;
+    }
+
+    #resultText{
+    font-size:18px;
+    color:#333;
+    margin-top:10px;
+    }
+
+    .roi-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: crosshair;
+    }
+    .roi-indicator {
+        position: absolute;
+        bottom: 10px;
+        background: rgba(0,0,0,0.7);
+        color: #fff;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 11px;
+        pointer-events: none;
+        text-align: center;
+    }
+
+    </style>
+    </head>
+
+    <body>
+
+    <div class="wrap">
+
+    <div class="head">
+        <h3>ChromaSnap</h3>
+    </div>
+
+    <div class="discribe">
+        <p>Strip Detection Mode</p>
+    </div>
+
+    <div class="btn">
+        <a href="homepage.html">← BACK</a>
+    </div>
+
+    </div>
+
+
+    <div class="UP">
+        <img id="preview">
+        <canvas id="roiCanvas" class="roi-canvas"></canvas>
+        <div id="roiStatus" class="roi-indicator" style="display:none;">Select: Result Band</div>
+    </div>
+
+    <form id="uploadForm" class="controls">
+        <input type="file" id="imgIN" accept="image/*">
+        <button type="button" onclick="measure()" class="upload">Measure</button>
+        <button type="button" onclick="uploadFile()" class="save">Save</button>
+    </form>
+
+    <div class="result">
+        <h3>Detection Result</h3>
+        <p class="conc" >concentration (ng/μL) : <span id="conc"></span></p>
+        <div id="resultText"></div>
+    </div>
+    <div class="history">
+        <a href="history.html">history →</a>
+    </div>
+
+
+    <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+        const supabase = createClient(
+            "https://dmuxjdpfvhnenxvpcemd.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtdXhqZHBmdmhuZW54dnBjZW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDU4MjAsImV4cCI6MjA4ODc4MTgyMH0.BeJcnNblEK6zkMsbiIAm3OSbnGHWP_GYTKjqFoKOIbc"
+        )
+    const BUCKET = "Chromasnap"
+    const TABLE = "Strip"
+    const input = document.getElementById("imgIN");
+    const preview = document.getElementById("preview");
+    const canvas = document.getElementById("roiCanvas");
+    const ctx = canvas.getContext("2d");
+    const roiStatus = document.getElementById("roiStatus");
+    let currentStep = 0; 
+    const steps = [
+        { label: "1/3 Drag: Result Band", color: "#ff0000" },
+        { label: "2/3 Drag: Background", color: "#00ff00" },
+        { label: "3/3 Drag: Control Band (Upper)", color: "#0000ff" }
+    ];
+
+    let rois = { result: null, bg: null, upper: null };
+    let isDrawing = false;
+    let startX, startY;
+    let scaleX = 1, scaleY = 1;
+
+    input.addEventListener("change", function(){
+        const file = this.files[0];
+        if(file){
+            const reader = new FileReader();
+            reader.onload = function(e){
+                preview.src = e.target.result;
+                preview.style.display = "block";
+                
+                preview.onload = function() {
+                    canvas.width = preview.clientWidth;
+                    canvas.height = preview.clientHeight;
+                    canvas.style.width = preview.clientWidth + "px";
+                    canvas.style.height = preview.clientHeight + "px";
+                    
+                    scaleX = preview.naturalWidth / preview.clientWidth;
+                    scaleY = preview.naturalHeight / preview.clientHeight;
+                    
+                    resetRois();
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function resetRois() {
+        currentStep = 0;
+        rois = { result: null, bg: null, upper: null };
+        roiStatus.style.display = "block";
+        roiStatus.innerHTML = steps[currentStep].label + "<br><small style='color:#bbb;'>(Right-click to undo)</small>";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // ฟังก์ชันล้างกล่องย้อนหลังเมื่อคลิกขวา (Right Click / Context Menu) เพื่อทำการ Redraw กล่องที่วาดพลาด
+    canvas.addEventListener("contextmenu", (e) => {
+        e.preventDefault(); // ปิดเมนูของบราวเซอร์ปกติ
+        if (currentStep > 0) {
+            currentStep--;
+            if (currentStep === 0) rois.result = null;
+            if (currentStep === 1) rois.bg = null;
+            if (currentStep === 2) rois.upper = null;
+            
+            roiStatus.innerHTML = steps[currentStep].label + "<br><small style='color:#bbb;'>(Right-click to undo)</small>";
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redrawSavedRois();
+        }
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+        if (e.button === 2) return; // ข้ามการทำงานถ้าเป็นคลิกขวา
+        if (currentStep >= 3) {
+            // หากวาดครบ 3 กล่องแล้วคลิกลากใหม่ จะเป็นการรีเซ็ตเพื่อ Redraw ทั้งหมดทันที
+            resetRois();
+        }
+        const rect = canvas.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        isDrawing = true;
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        redrawSavedRois();
+        
+        ctx.strokeStyle = steps[currentStep].color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+    });
+
+    canvas.addEventListener("mouseup", (e) => {
+        if (!isDrawing) return;
+        isDrawing = false;
+        const rect = canvas.getBoundingClientRect();
+        const endX = e.clientX - rect.left;
+        const endY = e.clientY - rect.top;
+        
+        // ตรวจสอบว่าขนาดกล่องไม่เล็กเกินไป (ป้องกันการกดคลิกเปล่าๆ โดยไม่ได้ลาก)
+        if (Math.abs(endX - startX) < 5 || Math.abs(endY - startY) < 5) {
+            return;
+        }
+
+        const targetRoi = {
+            x1: Math.min(startX, endX) * scaleX,
+            y1: Math.min(startY, endY) * scaleY,
+            x2: Math.max(startX, endX) * scaleX,
+            y2: Math.max(startY, endY) * scaleY
+        };
+
+        if (currentStep === 0) rois.result = targetRoi;
+        else if (currentStep === 1) rois.bg = targetRoi;
+        else if (currentStep === 2) rois.upper = targetRoi;
+        
+        currentStep++;
+        if (currentStep < 3) {
+            roiStatus.innerHTML = steps[currentStep].label + "<br><small style='color:#bbb;'>(Right-click to undo)</small>";
+        } else {
+            roiStatus.innerHTML = "Done! Click & Drag again to reset<br><small style='color:#bbb;'>(Right-click to undo)</small>";
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        redrawSavedRois();
+    });
+
+    function redrawSavedRois() {
+        const keys = ["result", "bg", "upper"];
+        keys.forEach((key, idx) => {
+            if (rois[key]) {
+                ctx.strokeStyle = steps[idx].color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    rois[key].x1 / scaleX,
+                    rois[key].y1 / scaleY,
+                    (rois[key].x2 - rois[key].x1) / scaleX,
+                    (rois[key].y2 - rois[key].y1) / scaleY
+                );
+            }
+        });
+    }
+
+    async function measure(){
+
+    const file = document.getElementById("imgIN").files[0];
+
+    if(!file){
+        alert("Please select image");
+        return;
+    }
+
+    if(currentStep < 3){
+        alert("Please draw all 3 regions (Result, Background, and Control) first!");
+        return;
+    }
+    
+    const formData = new FormData();
+
+    formData.append("image", file);
+    formData.append("rois", JSON.stringify(rois));
+
+    try{
+
+        const res = await fetch(
+            "https://YOUR-STRIP-SERVICE.onrender.com/predict",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+        
+        console.log("Status:", res.status);
+        console.log("OK:", res.ok);
+        let data = await res.json();
+        console.log(data);
+
+        if(data.status === "success"){
+
+            const value =
+                parseFloat(data.value).toFixed(2);
+
+            document.getElementById("conc").innerText =
+                value;
+
+        }
+        else{
+
+            document.getElementById("conc").innerText =
+                "Error parsing result";
+
+        }
+    }
+        catch(error){
+
+        console.error(error)
+        alert("Cannot connect to backend")
+
+        }
+
+    }
+window.measure = measure;
+
+document.getElementById("uploadForm").addEventListener("submit",function(e){
+e.preventDefault()
+})
+
+    window.uploadFile = async function () {
+    const file = document.getElementById("imgIN").files[0];
+    const conc = document.getElementById("conc").innerText;
+ 
+    if (!file) {
+        alert("Please select file");
+        return;
+    }
+
+    const filename = Date.now() + "_" + file.name;
+
+    try {
+        const { error: fileError } = await supabase.storage
+        .from(BUCKET)
+        .upload(filename, file);
+
+        if (fileError) {
+        alert(fileError.message);
+        return;
+        }
+
+        const { error } = await supabase
+        .from(TABLE)
+        .insert([
+            {
+            filename: filename,
+            date: new Date().toISOString(),
+            conc: parseFloat(conc)
+            }
+        ]);
+
+        if (error) {
+        alert(error.message);
+        return;
+        }
+
+        alert("Save success");
+    } catch (err) {
+        console.error(err);
+        alert("Upload failed");
+    }
+    }
+
+    </script>
+
+    </body>
+    </html>
