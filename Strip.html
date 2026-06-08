@@ -10,63 +10,59 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
 
-body{
-    margin:0;
-    font-family:Kanit,sans-serif;
-    background:linear-gradient(135deg,#eef1ff,#ffffff);
+body {
+    margin: 0;
+    font-family: Kanit, sans-serif;
+    background: linear-gradient(135deg, #eef1ff, #ffffff);
+    user-select: none;
 }
 
-.wrap{
-    padding:20px;
+.wrap {
+    padding: 20px;
 }
 
-.head{
-    font-size:26px;
-    font-weight:bold;
-    margin-left:50px;
-    color:#4f4ad8;
+.head {
+    font-size: 26px;
+    font-weight: bold;
+    margin-left: 50px;
+    color: #4f4ad8;
 }
 
-.discribe{
-    font-size:18px;
-    color:#4f4ad8;
-    opacity:0.7;
-    margin-top:-10px;
-    margin-left:50px;
-    border-bottom:1px solid #4f4ad8;
-    padding-bottom:5px;
+.discribe {
+    font-size: 18px;
+    color: #4f4ad8;
+    opacity: 0.7;
+    margin-top: -10px;
+    margin-left: 50px;
+    border-bottom: 1px solid #4f4ad8;
+    padding-bottom: 5px;
 }
 
-.btn{
-    position:absolute;
-    right:40px;
-    top:70px;
+.btn {
+    position: absolute;
+    right: 40px;
+    top: 70px;
 }
 
-.btn a{
-    color:#4f4ad8;
-    text-decoration:none;
+.btn a {
+    color: #4f4ad8;
+    text-decoration: none;
 }
 
-.UP{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:auto;
-    margin-top:40px;
-    width:320px;
-    height:420px;
-    border:3px dashed #4f4ad8;
-    border-radius:18px;
-    background:white;
-    overflow:hidden;
+/* Container keeping components aligned */
+.UP {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    margin-top: 40px;
+    width: 320px;
+    height: 420px;
+    border: 3px dashed #4f4ad8;
+    border-radius: 18px;
+    background: white;
     position: relative;
     cursor: pointer;
-    touch-action: none; 
-}
-
-.UP:hover{
-    transform:translateY(-5px);
 }
 
 #uploadHint {
@@ -78,19 +74,58 @@ body{
     pointer-events: none;
 }
 
-#preview{
-    width:100%;
-    height:100%;
-    object-fit:contain;   
-    border-radius:10px;
-    display:none;
+/* Image Workspace Frame */
+.workspace-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: none;
+    overflow: hidden;
 }
 
-.roi-canvas {
+#preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+}
+
+/* Advanced Crop Box UI Components */
+.crop-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    cursor: crosshair;
+    border: 2px solid #ff0000;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+    cursor: move;
+    touch-action: none;
+}
+
+.crop-handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: white;
+    border: 2px solid inherit;
+    border-radius: 50%;
+}
+
+.handle-tl { top: -7px; left: -7px; cursor: nwse-resize; }
+.handle-tr { top: -7px; right: -7px; cursor: nesw-resize; }
+.handle-bl { bottom: -7px; left: -7px; cursor: nesw-resize; }
+.handle-br { bottom: -7px; right: -7px; cursor: nwse-resize; }
+
+/* Real-Time Floating Magnifying Glass Lens */
+.magnifier-lens {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    display: none;
+    pointer-events: none;
+    z-index: 100;
+    background-repeat: no-repeat;
+    background-color: #000;
 }
 
 .roi-indicator {
@@ -106,21 +141,21 @@ body{
     z-index: 10;
 }
 
-.controls{
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    margin-top:20px;
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
 }
 
-button{
-    padding:10px 25px;
-    border:none;
-    border-radius:8px;
-    background:#4f4ad8;
-    color:white;
-    font-family:Kanit;
-    cursor:pointer;
+button {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 8px;
+    background: #4f4ad8;
+    color: white;
+    font-family: Kanit;
+    cursor: pointer;
     font-size: 15px;
     transition: all 0.2s ease;
 }
@@ -129,25 +164,30 @@ button:hover {
     background: #3f3da7;
 }
 
-.result{
-    width:320px;
-    margin:30px auto;
-    padding:20px;
-    background:white;
-    border-radius:18px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.08);
-    text-align:center;
-}
-        
-.result h3{
-    margin-top:0;
-    color:#4f4ad8;
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
 }
 
-#resultText{
-    font-size:18px;
-    color:#333;
-    margin-top:10px;
+.result {
+    width: 320px;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    text-align: center;
+}
+        
+.result h3 {
+    margin-top: 0;
+    color: #4f4ad8;
+}
+
+#resultText {
+    font-size: 18px;
+    color: #333;
+    margin-top: 10px;
 }
 
 .history {
@@ -160,30 +200,15 @@ button:hover {
     text-decoration: none;
 }
 
-/* 📱 MOBILE RESPONSIVE */
 @media (max-width:600px){
-    .wrap { padding:15px; }
-    .head{ margin-left:20px; font-size:22px; }
-    .discribe{ margin-left:20px; width:auto; font-size:16px; }
-    .btn{ right:20px; top:30px; }
-    
-    .UP{
-        width:90%;
-        height:340px;
-        margin-top:40px;
-    }
-    .controls {
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-    }
-    button {
-        width: 90%;
-        padding: 12px;
-    }
-    .result {
-        width: 90%;
-    }
+    .wrap { padding: 15px; }
+    .head { margin-left: 20px; font-size: 22px; }
+    .discribe { margin-left: 20px; width: auto; font-size: 16px; }
+    .btn { right: 20px; top: 30px; }
+    .UP { width: 90%; height: 340px; margin-top: 40px; }
+    .controls { flex-direction: column; align-items: center; gap: 12px; }
+    button { width: 90%; padding: 12px; }
+    .result { width: 90%; }
 }
 </style>
 </head>
@@ -204,15 +229,26 @@ button:hover {
 
 <div class="UP" id="dropZone">
     <span id="uploadHint">Tap here to capture or select image</span>
-    <img id="preview">
-    <canvas id="roiCanvas" class="roi-canvas"></canvas>
+    
+    <div class="workspace-container" id="workspace">
+        <img id="preview" alt="Analysis Target">
+        <div class="crop-overlay" id="cropBox">
+            <div class="crop-handle handle-tl" data-handle="tl"></div>
+            <div class="crop-handle handle-tr" data-handle="tr"></div>
+            <div class="crop-handle handle-bl" data-handle="bl"></div>
+            <div class="crop-handle handle-br" data-handle="br"></div>
+        </div>
+        <div class="magnifier-lens" id="lens"></div>
+    </div>
+
     <div id="roiStatus" class="roi-indicator" style="display:none;">Select: Result Band</div>
 </div>
 
 <form id="uploadForm" class="controls">
     <input type="file" id="imgIN" accept="image/*" style="display: none;">
     <button type="button" onclick="document.getElementById('imgIN').click()" style="background:#6c757d;">Choose Image</button>
-    <button type="button" onclick="measure()" class="upload">Measure</button>
+    <button type="button" id="actionBtn" onclick="handleCropStep()">Confirm Region</button>
+    <button type="button" id="measureBtn" onclick="measure()" disabled>Measure</button>
     <button type="button" onclick="uploadFile()" class="save">Save</button>
 </form>
 
@@ -232,233 +268,303 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const supabase = createClient(
     "https://dmuxjdpfvhnenxvpcemd.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtdXhqZHBmdmhuZW54dnBjZW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDU4MjAsImV4cCI6MjA4ODc4MTgyMH0.BeJcnNblEK6zkMsbiIAm3OSbnGHWP_GYTKjqFoKOIbc"
-)
+);
 
-const BUCKET = "Chromasnap"
-const TABLE = "Strip"
+const BUCKET = "Chromasnap";
+const TABLE = "Strip";
+
 const input = document.getElementById("imgIN");
 const preview = document.getElementById("preview");
-const canvas = document.getElementById("roiCanvas");
-const ctx = canvas.getContext("2d");
+const workspace = document.getElementById("workspace");
+const cropBox = document.getElementById("cropBox");
+const lens = document.getElementById("lens");
 const roiStatus = document.getElementById("roiStatus");
 const dropZone = document.getElementById("dropZone");
 const uploadHint = document.getElementById("uploadHint");
+const actionBtn = document.getElementById("actionBtn");
+const measureBtn = document.getElementById("measureBtn");
 
 let currentStep = 0; 
 const steps = [
-    { label: "1/3 Drag: Result Band", color: "#ff0000" },
-    { label: "2/3 Drag: Background", color: "#00ff00" },
-    { label: "3/3 Drag: Control Band (Upper)", color: "#0000ff" }
+    { label: "Step 1/3: Position over Result Band", color: "#ff0000" },
+    { label: "Step 2/3: Position over Background", color: "#00ff00" },
+    { label: "Step 3/3: Position over Control Band", color: "#0000ff" }
 ];
 
 let rois = { result: null, bg: null, upper: null };
-let isDrawing = false;
-let startX, startY;
-let scaleX = 1, scaleY = 1;
 
-// 🛠️ Dynamic scaling alignment helper function
-function updateScaleFactors() {
-    if (preview.clientWidth > 0 && preview.clientHeight > 0) {
-        canvas.width = preview.clientWidth;
-        canvas.height = preview.clientHeight;
-        canvas.style.width = preview.clientWidth + "px";
-        canvas.style.height = preview.clientHeight + "px";
-        
-        scaleX = preview.naturalWidth / preview.clientWidth;
-        scaleY = preview.naturalHeight / preview.clientHeight;
-    }
-}
+// Crop Box Geometry States (CSS Display Values)
+let boxX = 100, boxY = 150, boxW = 120, boxH = 50;
+let activeDrag = null; // 'move', 'tl', 'tr', 'bl', 'br'
+let startPointerX, startPointerY, startBoxX, startBoxY, startBoxW, startBoxH;
 
-// Automatically realign if the user changes zoom or window width mid-session
-window.addEventListener("resize", () => {
-    if (preview.style.display === "block") {
-        updateScaleFactors();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        redrawSavedRois();
-    }
-});
+// Image sizing data
+let imgRenderX = 0, imgRenderY = 0, imgRenderW = 0, imgRenderH = 0;
 
 dropZone.addEventListener("click", (e) => {
-    if (preview.style.display !== "block") {
+    if (workspace.style.display !== "block") {
         input.click();
     }
 });
 
-input.addEventListener("change", function(){
+input.addEventListener("change", function() {
     const file = this.files[0];
     if(file){
         const reader = new FileReader();
         reader.onload = function(e){
             preview.src = e.target.result;
-            preview.style.display = "block";
+            workspace.style.display = "block";
             uploadHint.style.display = "none";
+            roiStatus.style.display = "block";
             
             preview.onload = function() {
-                updateScaleFactors();
-                resetRois();
+                calculateImagePlacement();
+                resetCropSystem();
             }
         }
         reader.readAsDataURL(file);
     }
 });
 
-function resetRois() {
+function calculateImagePlacement() {
+    const containerW = workspace.clientWidth;
+    const containerH = workspace.clientHeight;
+    const imgW = preview.naturalWidth;
+    const imgH = preview.naturalHeight;
+    
+    const containerRatio = containerW / containerH;
+    const imgRatio = imgW / imgH;
+    
+    if (imgRatio > containerRatio) {
+        imgRenderW = containerW;
+        imgRenderH = containerW / imgRatio;
+        imgRenderX = 0;
+        imgRenderY = (containerH - imgRenderH) / 2;
+    } else {
+        imgRenderH = containerH;
+        imgRenderW = containerH * imgRatio;
+        imgRenderX = (containerW - imgRenderW) / 2;
+        imgRenderY = 0;
+    }
+}
+
+function resetCropSystem() {
     currentStep = 0;
     rois = { result: null, bg: null, upper: null };
-    roiStatus.style.display = "block";
-    updateStatusText();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    actionBtn.innerText = "Confirm Region";
+    actionBtn.style.background = "#4f4ad8";
+    measureBtn.disabled = true;
+    
+    // Position default cropbox safely inside the visible center image
+    boxW = Math.min(120, imgRenderW * 0.5);
+    boxH = Math.min(50, imgRenderH * 0.2);
+    boxX = imgRenderX + (imgRenderW - boxW) / 2;
+    boxY = imgRenderY + (imgRenderH - boxH) / 2;
+    
+    updateCropBoxUI();
 }
 
-function updateStatusText() {
-    if (currentStep < 3) {
-        roiStatus.innerHTML = steps[currentStep].label + "<br><small style='color:#bbb;'>(Tap with two fingers to undo)</small>";
-    } else {
-        roiStatus.innerHTML = "Done! Drag again to reset<br><small style='color:#bbb;'>(Tap with two fingers to undo)</small>";
-    }
+function updateCropBoxUI() {
+    cropBox.style.left = boxX + "px";
+    cropBox.style.top = boxY + "px";
+    cropBox.style.width = boxW + "px";
+    cropBox.style.height = boxH + "px";
+    cropBox.style.borderColor = steps[currentStep].color;
+    roiStatus.innerHTML = steps[currentStep].label;
 }
 
-function undoLastStep() {
-    if (currentStep > 0) {
-        currentStep--;
-        if (currentStep === 0) rois.result = null;
-        if (currentStep === 1) rois.bg = null;
-        if (currentStep === 2) rois.upper = null;
+// Global window layout tracking adaptions
+window.addEventListener("resize", () => {
+    if (workspace.style.display === "block") {
+        const oldW = imgRenderW;
+        const oldH = imgRenderH;
+        const oldX = boxX - imgRenderX;
+        const oldY = boxY - imgRenderY;
         
-        updateStatusText();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        redrawSavedRois();
+        calculateImagePlacement();
+        
+        const scaleW = imgRenderW / oldW;
+        const scaleH = imgRenderH / oldH;
+        
+        boxW *= scaleW;
+        boxH *= scaleH;
+        boxX = imgRenderX + (oldX * scaleW);
+        boxY = imgRenderY + (oldY * scaleH);
+        
+        updateCropBoxUI();
     }
-}
-
-canvas.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    undoLastStep();
 });
 
-function getCoordinates(e) {
-    const rect = canvas.getBoundingClientRect();
-    if (e.touches && e.touches.length > 0) {
-        return {
-            x: e.touches[0].clientX - rect.left,
-            y: e.touches[0].clientY - rect.top
-        };
-    } else {
-        return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        };
-    }
-}
-
-function startDrawing(e) {
-    if (e.touches && e.touches.length > 1) {
-        e.preventDefault();
-        isDrawing = false;
-        undoLastStep();
+/* 🔍 Real-Time Magnifier Engine Logic */
+function updateMagnifier(pointerX, pointerY) {
+    // Determine pointer offset position inside target preview workspace
+    const rect = workspace.getBoundingClientRect();
+    const localX = pointerX - rect.left;
+    const localY = pointerY - rect.top;
+    
+    // Bounds limit checking
+    if (localX < imgRenderX || localX > imgRenderX + imgRenderW || localY < imgRenderY || localY > imgRenderY + imgRenderH) {
+        lens.style.display = "none";
         return;
     }
-
-    if (preview.style.display !== "block") return;
-    if (currentStep >= 3) resetRois();
-
-    // 🛠️ Recalculate zoom modifications immediately when click starts
-    updateScaleFactors();
-
-    const coords = getCoordinates(e);
-    startX = coords.x;
-    startY = coords.y;
-    isDrawing = true;
+    
+    // Match matching coordinate math back to original underlying file scaling matrix
+    const scaleX = preview.naturalWidth / imgRenderW;
+    const scaleY = preview.naturalHeight / imgRenderH;
+    
+    const trueFileX = (localX - imgRenderX) * scaleX;
+    const trueFileY = (localY - imgRenderY) * scaleY;
+    
+    lens.style.display = "block";
+    // Stand lens clear slightly offset high-left above working fingers/thumbs
+    lens.style.left = (localX - 50) + "px";
+    lens.style.top = (localY - 120) + "px";
+    
+    lens.style.backgroundImage = `url('${preview.src}')`;
+    
+    // 3.0x Magnification level rendering
+    const zoomLevel = 3;
+    const bgWidth = preview.naturalWidth * (imgRenderW / preview.naturalWidth) * zoomLevel;
+    const bgHeight = preview.naturalHeight * (imgRenderH / preview.naturalHeight) * zoomLevel;
+    
+    lens.style.backgroundSize = `${bgWidth}px ${bgHeight}px`;
+    
+    const bgX = -(trueFileX * (imgRenderW / preview.naturalWidth) * zoomLevel - 50);
+    const bgY = -(trueFileY * (imgRenderH / preview.naturalHeight) * zoomLevel - 50);
+    lens.style.backgroundPosition = `${bgX}px ${bgY}px`;
 }
 
-function drawMove(e) {
-    if (!isDrawing) return;
-    e.preventDefault(); 
-
-    const coords = getCoordinates(e);
+/* 🕹️ Pointer Event Handling System */
+function onPointerDown(e) {
+    if (workspace.style.display !== "block" || currentStep >= 3) return;
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    redrawSavedRois();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     
-    ctx.strokeStyle = steps[currentStep].color;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(startX, startY, coords.x - startX, coords.y - startY);
-}
-
-function stopDrawing(e) {
-    if (!isDrawing) return;
-    isDrawing = false;
-
-    // 🛠️ Recalculate layout scales exactly on release event
-    updateScaleFactors();
-
-    let endX, endY;
-    const rect = canvas.getBoundingClientRect();
-    if (e.changedTouches && e.changedTouches.length > 0) {
-        endX = e.changedTouches[0].clientX - rect.left;
-        endY = e.changedTouches[0].clientY - rect.top;
+    const target = e.target;
+    if (target.classList.contains('crop-handle')) {
+        activeDrag = target.getAttribute('data-handle');
+    } else if (target === cropBox) {
+        activeDrag = 'move';
     } else {
-        endX = e.clientX - rect.left;
-        endY = e.clientY - rect.top;
-    }
-
-    if (Math.abs(endX - startX) < 8 || Math.abs(endY - startY) < 8) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        redrawSavedRois();
         return;
     }
+    
+    e.preventDefault();
+    startPointerX = clientX;
+    startPointerY = clientY;
+    startBoxX = boxX;
+    startBoxY = boxY;
+    startBoxW = boxW;
+    startBoxH = boxH;
+    
+    updateMagnifier(clientX, clientY);
+}
 
-    const targetRoi = {
-        x1: Math.min(startX, endX) * scaleX,
-        y1: Math.min(startY, endY) * scaleY,
-        x2: Math.max(startX, endX) * scaleX,
-        y2: Math.max(startY, endY) * scaleY
+function onPointerMove(e) {
+    if (!activeDrag) return;
+    e.preventDefault();
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const dx = clientX - startPointerX;
+    const dy = clientY - startPointerY;
+    
+    if (activeDrag === 'move') {
+        boxX = Math.max(imgRenderX, Math.min(startBoxX + dx, imgRenderX + imgRenderW - boxW));
+        boxY = Math.max(imgRenderY, Math.min(startBoxY + dy, imgRenderY + imgRenderH - boxH));
+    } else {
+        // Drag Handle Transformation Geometry Matrix Adjustments
+        if (activeDrag.includes('r')) boxW = Math.max(30, Math.min(startBoxW + dx, imgRenderX + imgRenderW - startBoxX));
+        if (activeDrag.includes('b')) boxH = Math.max(20, Math.min(startBoxH + dy, imgRenderY + imgRenderH - startBoxY));
+        
+        if (activeDrag.includes('l')) {
+            const potentialW = startBoxW - dx;
+            if (potentialW >= 30) {
+                boxX = Math.max(imgRenderX, startBoxX + dx);
+                boxW = startBoxW + (startBoxX - boxX);
+            }
+        }
+        if (activeDrag.includes('t')) {
+            const potentialH = startBoxH - dy;
+            if (potentialH >= 20) {
+                boxY = Math.max(imgRenderY, startBoxY + dy);
+                boxH = startBoxH + (startBoxY - boxY);
+            }
+        }
+    }
+    
+    updateCropBoxUI();
+    updateMagnifier(clientX, clientY);
+}
+
+function onPointerUp() {
+    activeDrag = null;
+    lens.style.display = "none";
+}
+
+workspace.addEventListener("mousedown", onPointerDown);
+window.addEventListener("mousemove", onPointerMove);
+window.addEventListener("mouseup", onPointerUp);
+
+workspace.addEventListener("touchstart", onPointerDown, { passive: false });
+window.addEventListener("touchmove", onPointerMove, { passive: false });
+window.addEventListener("touchend", onPointerUp);
+
+
+/* 💾 Pipeline Processing Matrix Mapping */
+window.handleCropStep = function() {
+    if (workspace.style.display !== "block" || currentStep >= 3) return;
+    
+    // Scale current visual display box positions to natural original pixel dimensions
+    const scaleX = preview.naturalWidth / imgRenderW;
+    const scaleY = preview.naturalHeight / imgRenderH;
+    
+    const targetROI = {
+        x1: (boxX - imgRenderX) * scaleX,
+        y1: (boxY - imgRenderY) * scaleY,
+        x2: ((boxX - imgRenderX) + boxW) * scaleX,
+        y2: ((boxY - imgRenderY) + boxH) * scaleY
     };
-
-    if (currentStep === 0) rois.result = targetRoi;
-    else if (currentStep === 1) rois.bg = targetRoi;
-    else if (currentStep === 2) rois.upper = targetRoi;
+    
+    if (currentStep === 0) rois.result = targetROI;
+    else if (currentStep === 1) rois.bg = targetROI;
+    else if (currentStep === 2) rois.upper = targetROI;
     
     currentStep++;
-    updateStatusText();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    redrawSavedRois();
+    
+    if (currentStep < 3) {
+        updateCropBoxUI();
+    } else {
+        roiStatus.innerHTML = "🎉 All Regions Locked! Click 'Measure' below.";
+        cropBox.style.display = "none";
+        actionBtn.innerText = "Reset Framework";
+        actionBtn.style.background = "#6c757d";
+        measureBtn.disabled = false;
+    }
 }
 
-canvas.addEventListener("mousedown", startDrawing);
-canvas.addEventListener("mousemove", drawMove);
-canvas.addEventListener("mouseup", stopDrawing);
-
-canvas.addEventListener("touchstart", startDrawing, { passive: false });
-canvas.addEventListener("touchmove", drawMove, { passive: false });
-canvas.addEventListener("touchend", stopDrawing);
-
-function redrawSavedRois() {
-    const keys = ["result", "bg", "upper"];
-    keys.forEach((key, idx) => {
-        if (rois[key]) {
-            ctx.strokeStyle = steps[idx].color;
-            ctx.lineWidth = 2;
-            ctx.strokeRect(
-                rois[key].x1 / scaleX,
-                rois[key].y1 / scaleY,
-                (rois[key].x2 - rois[key].x1) / scaleX,
-                (rois[key].y2 - rois[key].y1) / scaleY
-            );
-        }
-    });
+function handleCropReset() {
+    cropBox.style.display = "block";
+    resetCropSystem();
 }
 
-document.getElementById("uploadForm").addEventListener("submit", (e) => e.preventDefault());
+// Route button switching behavior cleanly
+window.handleCropStepBtnRedirect = function() {
+    if (currentStep >= 3) {
+        handleCropReset();
+    } else {
+        handleCropStep();
+    }
+}
+actionBtn.setAttribute("onclick", "handleCropStepBtnRedirect()");
+
 
 async function measure(){
     const file = input.files[0];
-    if(!file){
-        alert("Please select image");
-        return;
-    }
-    if(currentStep < 3){
-        alert("Please draw all 3 regions (Result, Background, and Control) first!");
+    if(!file || currentStep < 3){
+        alert("Please prepare your boundaries carefully first.");
         return;
     }
     
@@ -466,7 +572,7 @@ async function measure(){
     formData.append("image", file);
     formData.append("rois", JSON.stringify(rois));
 
-    try{
+    try {
         const res = await fetch(
             "https://chromasnap1.onrender.com/predict", 
             {
