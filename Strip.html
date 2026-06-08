@@ -451,26 +451,29 @@ async function measure(){
     formData.append("image", file);
     formData.append("rois", JSON.stringify(rois));
 
-    try{
-        const res = await fetch(
-            "https://chromasnap1.onrender.com/predict", // Update to matching deployed server URL dynamically
-            {
-                method: "POST",
-                body: formData
-            }
-        );
-        
-        let data = await res.json();
-        if(data.status === "success"){
-            document.getElementById("conc").innerText = parseFloat(data.value).toFixed(2);
-        } else {
-            document.getElementById("conc").innerText = "Error parsing result";
+   try {
+    const res = await fetch(
+        "https://chromasnap1.onrender.com/predict",
+        {
+            method: "POST",
+            body: formData
         }
+    );
+    
+    let data = await res.json();
+    console.log("Backend Response:", data); // This logs the raw response to your console
+
+    if (data.status === "success") {
+        document.getElementById("conc").innerText = parseFloat(data.value).toFixed(2);
+    } else {
+        // FIXED: Show the actual error message from the backend if it exists
+        document.getElementById("conc").innerText = data.message || "Error: Check backend logs";
     }
-    catch(error){
-        console.error(error);
-        alert("Cannot connect to backend server");
-    }
+}
+catch (error) {
+    console.error(error);
+    alert("Cannot connect to backend server");
+}
 }
 window.measure = measure;
 
