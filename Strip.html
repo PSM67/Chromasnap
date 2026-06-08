@@ -451,13 +451,30 @@ async function measure(){
     formData.append("image", file);
     formData.append("rois", JSON.stringify(rois));
 
-   try {
-    const res = await fetch(
-        "https://chromasnap1.onrender.com/predict",
-        {
-            method: "POST",
-            body: formData
+    try{
+        const res = await fetch(
+            "https://chromasnap1.onrender.com/predict", 
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+        
+        let data = await res.json();
+        console.log("Full Server Response:", data);
+
+        if(data.status === "success"){
+            document.getElementById("conc").innerText = parseFloat(data.value).toFixed(2);
+        } else {
+            // FIXED: This will print the EXACT JSON response onto your screen so you can see the keys
+            document.getElementById("conc").innerText = "Raw Data: " + JSON.stringify(data);
         }
+    }
+    catch(error){
+        console.error(error);
+        alert("Cannot connect to backend server");
+    }
+}
     );
     
     let data = await res.json();
