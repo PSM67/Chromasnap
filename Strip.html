@@ -256,6 +256,28 @@ let isDrawing = false;
 let startX, startY;
 let scaleX = 1, scaleY = 1;
 
+// 🛠️ Dynamic scaling alignment helper function
+function updateScaleFactors() {
+    if (preview.clientWidth > 0 && preview.clientHeight > 0) {
+        canvas.width = preview.clientWidth;
+        canvas.height = preview.clientHeight;
+        canvas.style.width = preview.clientWidth + "px";
+        canvas.style.height = preview.clientHeight + "px";
+        
+        scaleX = preview.naturalWidth / preview.clientWidth;
+        scaleY = preview.naturalHeight / preview.clientHeight;
+    }
+}
+
+// Automatically realign if the user changes zoom or window width mid-session
+window.addEventListener("resize", () => {
+    if (preview.style.display === "block") {
+        updateScaleFactors();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        redrawSavedRois();
+    }
+});
+
 dropZone.addEventListener("click", (e) => {
     if (preview.style.display !== "block") {
         input.click();
@@ -272,14 +294,7 @@ input.addEventListener("change", function(){
             uploadHint.style.display = "none";
             
             preview.onload = function() {
-                canvas.width = preview.clientWidth;
-                canvas.height = preview.clientHeight;
-                canvas.style.width = preview.clientWidth + "px";
-                canvas.style.height = preview.clientHeight + "px";
-                
-                scaleX = preview.naturalWidth / preview.clientWidth;
-                scaleY = preview.naturalHeight / preview.clientHeight;
-                
+                updateScaleFactors();
                 resetRois();
             }
         }
@@ -347,6 +362,9 @@ function startDrawing(e) {
     if (preview.style.display !== "block") return;
     if (currentStep >= 3) resetRois();
 
+    // 🛠️ Recalculate zoom modifications immediately when click starts
+    updateScaleFactors();
+
     const coords = getCoordinates(e);
     startX = coords.x;
     startY = coords.y;
@@ -370,6 +388,9 @@ function drawMove(e) {
 function stopDrawing(e) {
     if (!isDrawing) return;
     isDrawing = false;
+
+    // 🛠️ Recalculate layout scales exactly on release event
+    updateScaleFactors();
 
     let endX, endY;
     const rect = canvas.getBoundingClientRect();
@@ -460,7 +481,6 @@ async function measure(){
         if(data.status === "success"){
             document.getElementById("conc").innerText = parseFloat(data.value).toFixed(2);
         } else {
-            // Display raw format response data to help configure custom keys easily
             document.getElementById("conc").innerText = "Raw Data: " + JSON.stringify(data);
         }
     }
