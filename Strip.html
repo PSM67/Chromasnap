@@ -62,7 +62,6 @@ body{
     overflow:hidden;
     position: relative;
     cursor: pointer;
-    /* Prevent default browser pan/zoom layout freezes during drag events */
     touch-action: none; 
 }
 
@@ -212,6 +211,7 @@ button:hover {
 
 <form id="uploadForm" class="controls">
     <input type="file" id="imgIN" accept="image/*" style="display: none;">
+    <button type="button" onclick="document.getElementById('imgIN').click()" style="background:#6c757d;">Choose Image</button>
     <button type="button" onclick="measure()" class="upload">Measure</button>
     <button type="button" onclick="uploadFile()" class="save">Save</button>
 </form>
@@ -256,7 +256,6 @@ let isDrawing = false;
 let startX, startY;
 let scaleX = 1, scaleY = 1;
 
-// Only trigger camera file window picker when frame contains no image
 dropZone.addEventListener("click", (e) => {
     if (preview.style.display !== "block") {
         input.click();
@@ -317,13 +316,11 @@ function undoLastStep() {
     }
 }
 
-// Support desktop mouse right click fallback options
 canvas.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     undoLastStep();
 });
 
-// Helper coordinate logic mapping coordinates cleanly across layouts
 function getCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
     if (e.touches && e.touches.length > 0) {
@@ -340,7 +337,6 @@ function getCoordinates(e) {
 }
 
 function startDrawing(e) {
-    // Mobile alternative shortcut tool: If two fingers touch screen together, handle undo
     if (e.touches && e.touches.length > 1) {
         e.preventDefault();
         isDrawing = false;
@@ -359,7 +355,7 @@ function startDrawing(e) {
 
 function drawMove(e) {
     if (!isDrawing) return;
-    e.preventDefault(); // CRITICAL: Stop phone view scrolling while sliding finger across canvas
+    e.preventDefault(); 
 
     const coords = getCoordinates(e);
     
@@ -375,7 +371,6 @@ function stopDrawing(e) {
     if (!isDrawing) return;
     isDrawing = false;
 
-    // Use changedTouches for touch ending endpoints data
     let endX, endY;
     const rect = canvas.getBoundingClientRect();
     if (e.changedTouches && e.changedTouches.length > 0) {
@@ -409,7 +404,6 @@ function stopDrawing(e) {
     redrawSavedRois();
 }
 
-// Unify tracking events arrays across platforms directly
 canvas.addEventListener("mousedown", startDrawing);
 canvas.addEventListener("mousemove", drawMove);
 canvas.addEventListener("mouseup", stopDrawing);
@@ -466,7 +460,7 @@ async function measure(){
         if(data.status === "success"){
             document.getElementById("conc").innerText = parseFloat(data.value).toFixed(2);
         } else {
-            // FIXED: This will print the EXACT JSON response onto your screen so you can see the keys
+            // Display raw format response data to help configure custom keys easily
             document.getElementById("conc").innerText = "Raw Data: " + JSON.stringify(data);
         }
     }
@@ -474,23 +468,6 @@ async function measure(){
         console.error(error);
         alert("Cannot connect to backend server");
     }
-}
-    );
-    
-    let data = await res.json();
-    console.log("Backend Response:", data); // This logs the raw response to your console
-
-    if (data.status === "success") {
-        document.getElementById("conc").innerText = parseFloat(data.value).toFixed(2);
-    } else {
-        // FIXED: Show the actual error message from the backend if it exists
-        document.getElementById("conc").innerText = data.message || "Error: Check backend logs";
-    }
-}
-catch (error) {
-    console.error(error);
-    alert("Cannot connect to backend server");
-}
 }
 window.measure = measure;
 
