@@ -1,0 +1,9 @@
+{
+  "name": "ChromaSnap",
+  "short_name": "ChromaSnap",
+  "start_url": "/chromasnap/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f4ad8",
+  "icons": [{"src": "icon.png", "sizes": "192x192", "type": "image/png"}]
+}
