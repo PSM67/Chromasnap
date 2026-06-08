@@ -49,7 +49,6 @@ body {
     text-decoration: none;
 }
 
-/* Container keeping components aligned */
 .UP {
     display: flex;
     align-items: center;
@@ -74,7 +73,6 @@ body {
     pointer-events: none;
 }
 
-/* Image Workspace Frame */
 .workspace-container {
     position: relative;
     width: 100%;
@@ -90,7 +88,6 @@ body {
     border-radius: 10px;
 }
 
-/* Advanced Crop Box UI Components */
 .crop-overlay {
     position: absolute;
     border: 2px solid #ff0000;
@@ -101,31 +98,54 @@ body {
 
 .crop-handle {
     position: absolute;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     background-color: white;
     border: 2px solid inherit;
     border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
-.handle-tl { top: -7px; left: -7px; cursor: nwse-resize; }
-.handle-tr { top: -7px; right: -7px; cursor: nesw-resize; }
-.handle-bl { bottom: -7px; left: -7px; cursor: nesw-resize; }
-.handle-br { bottom: -7px; right: -7px; cursor: nwse-resize; }
+.handle-tl { top: -8px; left: -8px; cursor: nwse-resize; }
+.handle-tr { top: -8px; right: -8px; cursor: nesw-resize; }
+.handle-bl { bottom: -8px; left: -8px; cursor: nesw-resize; }
+.handle-br { bottom: -8px; right: -8px; cursor: nwse-resize; }
 
-/* Real-Time Floating Magnifying Glass Lens */
+/* 🔍 Real-Time Magnifying Glass Lens with Center Crosshair */
 .magnifier-lens {
     position: absolute;
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     border: 3px solid #fff;
     border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     display: none;
     pointer-events: none;
     z-index: 100;
     background-repeat: no-repeat;
     background-color: #000;
+}
+
+/* Red reticle indicator precisely in the middle of the lens view */
+.magnifier-lens::before, .magnifier-lens::after {
+    content: '';
+    position: absolute;
+    background: #ff2a2a;
+    z-index: 101;
+}
+.magnifier-lens::before {
+    top: 50%;
+    left: 40%;
+    width: 20%;
+    height: 2px;
+    transform: translateY(-50%);
+}
+.magnifier-lens::after {
+    left: 50%;
+    top: 40%;
+    height: 20%;
+    width: 2px;
+    transform: translateX(-50%);
 }
 
 .roi-indicator {
@@ -293,12 +313,10 @@ const steps = [
 
 let rois = { result: null, bg: null, upper: null };
 
-// Crop Box Geometry States (CSS Display Values)
 let boxX = 100, boxY = 150, boxW = 120, boxH = 50;
-let activeDrag = null; // 'move', 'tl', 'tr', 'bl', 'br'
+let activeDrag = null; 
 let startPointerX, startPointerY, startBoxX, startBoxY, startBoxW, startBoxH;
 
-// Image sizing data
 let imgRenderX = 0, imgRenderY = 0, imgRenderW = 0, imgRenderH = 0;
 
 dropZone.addEventListener("click", (e) => {
@@ -355,7 +373,6 @@ function resetCropSystem() {
     actionBtn.style.background = "#4f4ad8";
     measureBtn.disabled = true;
     
-    // Position default cropbox safely inside the visible center image
     boxW = Math.min(120, imgRenderW * 0.5);
     boxH = Math.min(50, imgRenderH * 0.2);
     boxX = imgRenderX + (imgRenderW - boxW) / 2;
@@ -373,7 +390,6 @@ function updateCropBoxUI() {
     roiStatus.innerHTML = steps[currentStep].label;
 }
 
-// Global window layout tracking adaptions
 window.addEventListener("resize", () => {
     if (workspace.style.display === "block") {
         const oldW = imgRenderW;
@@ -395,46 +411,51 @@ window.addEventListener("resize", () => {
     }
 });
 
-/* 🔍 Real-Time Magnifier Engine Logic */
+/* 🔍 Real-Time Magnifier Engine Logic targeting exact Pointer Focus Points */
 function updateMagnifier(pointerX, pointerY) {
-    // Determine pointer offset position inside target preview workspace
     const rect = workspace.getBoundingClientRect();
     const localX = pointerX - rect.left;
     const localY = pointerY - rect.top;
     
-    // Bounds limit checking
     if (localX < imgRenderX || localX > imgRenderX + imgRenderW || localY < imgRenderY || localY > imgRenderY + imgRenderH) {
         lens.style.display = "none";
         return;
     }
+
+    // 🎯 DYNAMIC AID CORRECTION: Track exactly what point is being edited!
+    let targetWorkspaceX = localX;
+    let targetWorkspaceY = localY;
+
+    if (activeDrag === 'tl') { targetWorkspaceX = boxX; targetWorkspaceY = boxY; }
+    else if (activeDrag === 'tr') { targetWorkspaceX = boxX + boxW; targetWorkspaceY = boxY; }
+    else if (activeDrag === 'bl') { targetWorkspaceX = boxX; targetWorkspaceY = boxY + boxH; }
+    else if (activeDrag === 'br') { targetWorkspaceX = boxX + boxW; targetWorkspaceY = boxY + boxH; }
+    else if (activeDrag === 'move') { targetWorkspaceX = boxX + (boxW / 2); targetWorkspaceY = boxY + (boxH / 2); }
     
-    // Match matching coordinate math back to original underlying file scaling matrix
     const scaleX = preview.naturalWidth / imgRenderW;
     const scaleY = preview.naturalHeight / imgRenderH;
     
-    const trueFileX = (localX - imgRenderX) * scaleX;
-    const trueFileY = (localY - imgRenderY) * scaleY;
+    const trueFileX = (targetWorkspaceX - imgRenderX) * scaleX;
+    const trueFileY = (targetWorkspaceY - imgRenderY) * scaleY;
     
     lens.style.display = "block";
-    // Stand lens clear slightly offset high-left above working fingers/thumbs
-    lens.style.left = (localX - 50) + "px";
-    lens.style.top = (localY - 120) + "px";
+    // Keep lens floating up above finger tracking interaction zone
+    lens.style.left = (localX - 60) + "px";
+    lens.style.top = (localY - 140) + "px";
     
     lens.style.backgroundImage = `url('${preview.src}')`;
     
-    // 3.0x Magnification level rendering
-    const zoomLevel = 3;
+    const zoomLevel = 4; // Shifted up to 4x magnification factor for raw pigments
     const bgWidth = preview.naturalWidth * (imgRenderW / preview.naturalWidth) * zoomLevel;
     const bgHeight = preview.naturalHeight * (imgRenderH / preview.naturalHeight) * zoomLevel;
     
     lens.style.backgroundSize = `${bgWidth}px ${bgHeight}px`;
     
-    const bgX = -(trueFileX * (imgRenderW / preview.naturalWidth) * zoomLevel - 50);
-    const bgY = -(trueFileY * (imgRenderH / preview.naturalHeight) * zoomLevel - 50);
+    const bgX = -(trueFileX * (imgRenderW / preview.naturalWidth) * zoomLevel - 60);
+    const bgY = -(trueFileY * (imgRenderH / preview.naturalHeight) * zoomLevel - 60);
     lens.style.backgroundPosition = `${bgX}px ${bgY}px`;
 }
 
-/* 🕹️ Pointer Event Handling System */
 function onPointerDown(e) {
     if (workspace.style.display !== "block" || currentStep >= 3) return;
     
@@ -475,20 +496,20 @@ function onPointerMove(e) {
         boxX = Math.max(imgRenderX, Math.min(startBoxX + dx, imgRenderX + imgRenderW - boxW));
         boxY = Math.max(imgRenderY, Math.min(startBoxY + dy, imgRenderY + imgRenderH - boxH));
     } else {
-        // Drag Handle Transformation Geometry Matrix Adjustments
-        if (activeDrag.includes('r')) boxW = Math.max(30, Math.min(startBoxW + dx, imgRenderX + imgRenderW - startBoxX));
-        if (activeDrag.includes('b')) boxH = Math.max(20, Math.min(startBoxH + dy, imgRenderY + imgRenderH - startBoxY));
+        // 🛠️ FIXED: Lower limits shifted to 1px wide/tall for micro chromatography band tracking
+        if (activeDrag.includes('r')) boxW = Math.max(1, Math.min(startBoxW + dx, imgRenderX + imgRenderW - startBoxX));
+        if (activeDrag.includes('b')) boxH = Math.max(1, Math.min(startBoxH + dy, imgRenderY + imgRenderH - startBoxY));
         
         if (activeDrag.includes('l')) {
             const potentialW = startBoxW - dx;
-            if (potentialW >= 30) {
+            if (potentialW >= 1) {
                 boxX = Math.max(imgRenderX, startBoxX + dx);
                 boxW = startBoxW + (startBoxX - boxX);
             }
         }
         if (activeDrag.includes('t')) {
             const potentialH = startBoxH - dy;
-            if (potentialH >= 20) {
+            if (potentialH >= 1) {
                 boxY = Math.max(imgRenderY, startBoxY + dy);
                 boxH = startBoxH + (startBoxY - boxY);
             }
@@ -512,12 +533,9 @@ workspace.addEventListener("touchstart", onPointerDown, { passive: false });
 window.addEventListener("touchmove", onPointerMove, { passive: false });
 window.addEventListener("touchend", onPointerUp);
 
-
-/* 💾 Pipeline Processing Matrix Mapping */
 window.handleCropStep = function() {
     if (workspace.style.display !== "block" || currentStep >= 3) return;
     
-    // Scale current visual display box positions to natural original pixel dimensions
     const scaleX = preview.naturalWidth / imgRenderW;
     const scaleY = preview.naturalHeight / imgRenderH;
     
@@ -550,7 +568,6 @@ function handleCropReset() {
     resetCropSystem();
 }
 
-// Route button switching behavior cleanly
 window.handleCropStepBtnRedirect = function() {
     if (currentStep >= 3) {
         handleCropReset();
@@ -559,7 +576,6 @@ window.handleCropStepBtnRedirect = function() {
     }
 }
 actionBtn.setAttribute("onclick", "handleCropStepBtnRedirect()");
-
 
 async function measure(){
     const file = input.files[0];
