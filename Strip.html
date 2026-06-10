@@ -3,223 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ChromaSnap</title>
+<title>ChromaSnap - Strip Mode</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4f4ad8">
-
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
-
-body {
-    margin: 0;
-    font-family: Kanit, sans-serif;
-    background: linear-gradient(135deg, #eef1ff, #ffffff);
-    user-select: none;
-}
-
-.wrap {
-    padding: 20px;
-}
-
-.head {
-    font-size: 26px;
-    font-weight: bold;
-    margin-left: 50px;
-    color: #4f4ad8;
-}
-
-.discribe {
-    font-size: 18px;
-    color: #4f4ad8;
-    opacity: 0.7;
-    margin-top: -10px;
-    margin-left: 50px;
-    border-bottom: 1px solid #4f4ad8;
-    padding-bottom: 5px;
-}
-
-.btn {
-    position: absolute;
-    right: 40px;
-    top: 70px;
-}
-
-.btn a {
-    color: #4f4ad8;
-    text-decoration: none;
-}
-
-.UP {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: auto;
-    margin-top: 40px;
-    width: 320px;
-    height: 420px;
-    border: 3px dashed #4f4ad8;
-    border-radius: 18px;
-    background: white;
-    position: relative;
-    cursor: pointer;
-}
-
-#uploadHint {
-    color: #4f4ad8;
-    font-size: 16px;
-    text-align: center;
-    opacity: 0.7;
-    position: absolute;
-    pointer-events: none;
-}
-
-.workspace-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: none;
-    overflow: hidden;
-}
-
-#preview {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 10px;
-}
-
-.crop-overlay {
-    position: absolute;
-    border: 2px solid #ff0000;
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
-    cursor: move;
-    touch-action: none;
-}
-
-.crop-handle {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background-color: white;
-    border: 2px solid inherit;
-    border-radius: 50%;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
-
+body { margin: 0; font-family: Kanit, sans-serif; background: linear-gradient(135deg, #eef1ff, #ffffff); user-select: none; }
+.wrap { padding: 20px; }
+.head { font-size: 26px; font-weight: bold; margin-left: 50px; color: #4f4ad8; }
+.discribe { font-size: 18px; color: #4f4ad8; opacity: 0.7; margin-top: -10px; margin-left: 50px; border-bottom: 1px solid #4f4ad8; padding-bottom: 5px; }
+.btn { position: absolute; right: 40px; top: 70px; }
+.btn a { color: #4f4ad8; text-decoration: none; }
+.UP { display: flex; align-items: center; justify-content: center; margin: auto; margin-top: 40px; width: 320px; height: 420px; border: 3px dashed #4f4ad8; border-radius: 18px; background: white; position: relative; cursor: pointer; }
+#uploadHint { color: #4f4ad8; font-size: 16px; text-align: center; opacity: 0.7; position: absolute; pointer-events: none; }
+.workspace-container { position: relative; width: 100%; height: 100%; display: none; overflow: hidden; }
+#preview { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
+.crop-overlay { position: absolute; border: 2px solid #ff0000; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4); cursor: move; touch-action: none; }
+.crop-handle { position: absolute; width: 16px; height: 16px; background-color: white; border: 2px solid inherit; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 .handle-tl { top: -8px; left: -8px; cursor: nwse-resize; }
 .handle-tr { top: -8px; right: -8px; cursor: nesw-resize; }
 .handle-bl { bottom: -8px; left: -8px; cursor: nesw-resize; }
 .handle-br { bottom: -8px; right: -8px; cursor: nwse-resize; }
-
-/* 🔍 Real-Time Magnifying Glass Lens with Center Crosshair */
-.magnifier-lens {
-    position: absolute;
-    width: 120px;
-    height: 120px;
-    border: 3px solid #fff;
-    border-radius: 50%;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    display: none;
-    pointer-events: none;
-    z-index: 100;
-    background-repeat: no-repeat;
-    background-color: #000;
-}
-
-/* Red reticle indicator precisely in the middle of the lens view */
-.magnifier-lens::before, .magnifier-lens::after {
-    content: '';
-    position: absolute;
-    background: #ff2a2a;
-    z-index: 101;
-}
-.magnifier-lens::before {
-    top: 50%;
-    left: 40%;
-    width: 20%;
-    height: 2px;
-    transform: translateY(-50%);
-}
-.magnifier-lens::after {
-    left: 50%;
-    top: 40%;
-    height: 20%;
-    width: 2px;
-    transform: translateX(-50%);
-}
-
-.roi-indicator {
-    position: absolute;
-    bottom: 10px;
-    background: rgba(0,0,0,0.8);
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    pointer-events: none;
-    text-align: center;
-    z-index: 10;
-}
-
-.controls {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-}
-
-button {
-    padding: 10px 25px;
-    border: none;
-    border-radius: 8px;
-    background: #4f4ad8;
-    color: white;
-    font-family: Kanit;
-    cursor: pointer;
-    font-size: 15px;
-    transition: all 0.2s ease;
-}
-
-button:hover {
-    background: #3f3da7;
-}
-
-button:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-}
-
-.result {
-    width: 320px;
-    margin: 30px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 18px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    text-align: center;
-}
-        
-.result h3 {
-    margin-top: 0;
-    color: #4f4ad8;
-}
-
-#resultText {
-    font-size: 18px;
-    color: #333;
-    margin-top: 10px;
-}
-
-.history {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.history a {
-    color: #4f4ad8;
-    text-decoration: none;
-}
-
+.magnifier-lens { position: absolute; width: 120px; height: 120px; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; pointer-events: none; z-index: 100; background-repeat: no-repeat; background-color: #000; }
+.magnifier-lens::before, .magnifier-lens::after { content: ''; position: absolute; background: #ff2a2a; z-index: 101; }
+.magnifier-lens::before { top: 50%; left: 40%; width: 20%; height: 2px; transform: translateY(-50%); }
+.magnifier-lens::after { left: 50%; top: 40%; height: 20%; width: 2px; transform: translateX(-50%); }
+.roi-indicator { position: absolute; bottom: 10px; background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 6px; font-size: 12px; pointer-events: none; text-align: center; z-index: 10; }
+.controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+button { padding: 10px 25px; border: none; border-radius: 8px; background: #4f4ad8; color: white; font-family: Kanit; cursor: pointer; font-size: 15px; transition: all 0.2s ease; }
+button:hover { background: #3f3da7; }
+button:disabled { background: #ccc; cursor: not-allowed; }
+.result { width: 320px; margin: 30px auto; padding: 20px; background: white; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
+.result h3 { margin-top: 0; color: #4f4ad8; }
+#resultText { font-size: 18px; color: #333; margin-top: 10px; }
+.history { text-align: center; margin-bottom: 30px; }
+.history a { color: #4f4ad8; text-decoration: none; }
 @media (max-width:600px){
     .wrap { padding: 15px; }
     .head { margin-left: 20px; font-size: 22px; }
@@ -231,25 +49,18 @@ button:disabled {
     .result { width: 90%; }
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 </head>
-
 <body>
 
 <div class="wrap">
-    <div class="head">
-        <h3>ChromaSnap</h3>
-    </div>
-    <div class="discribe">
-        <p>Strip Detection Mode</p>
-    </div>
-    <div class="btn">
-        <a href="homepage.html">← BACK</a>
-    </div>
+    <div class="head"><h3>ChromaSnap</h3></div>
+    <div class="discribe"><p>Strip Detection Mode (Offline)</p></div>
+    <div class="btn"><a href="homepage.html">← BACK</a></div>
 </div>
 
 <div class="UP" id="dropZone">
     <span id="uploadHint">Tap here to capture or select image</span>
-    
     <div class="workspace-container" id="workspace">
         <img id="preview" alt="Analysis Target">
         <div class="crop-overlay" id="cropBox">
@@ -260,14 +71,13 @@ button:disabled {
         </div>
         <div class="magnifier-lens" id="lens"></div>
     </div>
-
     <div id="roiStatus" class="roi-indicator" style="display:none;">Select: Result Band</div>
 </div>
 
 <form id="uploadForm" class="controls">
     <input type="file" id="imgIN" accept="image/*" style="display: none;">
     <button type="button" onclick="document.getElementById('imgIN').click()" style="background:#6c757d;">Choose Image</button>
-    <button type="button" id="actionBtn" onclick="handleCropStep()">Confirm Region</button>
+    <button type="button" id="actionBtn" onclick="handleCropStepBtnRedirect()">Confirm Region</button>
     <button type="button" id="measureBtn" onclick="measure()" disabled>Measure</button>
     <button type="button" onclick="uploadFile()" class="save">Save</button>
 </form>
@@ -278,20 +88,24 @@ button:disabled {
     <div id="resultText"></div>
 </div>
 
-<div class="history">
-    <a href="history.html">history →</a>
-</div>
+<div class="history"><a href="history.html">history →</a></div>
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
-
-const supabase = createClient(
-    "https://dmuxjdpfvhnenxvpcemd.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtdXhqZHBmdmhuZW54dnBjZW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDU4MjAsImV4cCI6MjA4ODc4MTgyMH0.BeJcnNblEK6zkMsbiIAm3OSbnGHWP_GYTKjqFoKOIbc"
-);
-
-const BUCKET = "Chromasnap";
-const TABLE = "Strip";
+<script>
+// Local Embedded Transaction Database Management configuration
+const DB_NAME = "ChromaSnapLocalDB";
+function saveToLocalDB(storeName, record) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction(storeName, "readwrite");
+            const store = tx.objectStore(storeName);
+            store.add(record);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+        };
+    });
+}
 
 const input = document.getElementById("imgIN");
 const preview = document.getElementById("preview");
@@ -300,7 +114,6 @@ const cropBox = document.getElementById("cropBox");
 const lens = document.getElementById("lens");
 const roiStatus = document.getElementById("roiStatus");
 const dropZone = document.getElementById("dropZone");
-const uploadHint = document.getElementById("uploadHint");
 const actionBtn = document.getElementById("actionBtn");
 const measureBtn = document.getElementById("measureBtn");
 
@@ -312,17 +125,25 @@ const steps = [
 ];
 
 let rois = { result: null, bg: null, upper: null };
-
 let boxX = 100, boxY = 150, boxW = 120, boxH = 50;
 let activeDrag = null; 
 let startPointerX, startPointerY, startBoxX, startBoxY, startBoxW, startBoxH;
-
 let imgRenderX = 0, imgRenderY = 0, imgRenderW = 0, imgRenderH = 0;
+let ortSession = null;
 
-dropZone.addEventListener("click", (e) => {
-    if (workspace.style.display !== "block") {
-        input.click();
+// Initialize ONNX runtime engine completely locally
+async function initModel() {
+    try {
+        ortSession = await ort.InferenceSession.create('./dna_concentration.onnx');
+        console.log("ONNX Strip Model Loaded Successfully.");
+    } catch(e) {
+        console.error("Failed to load ONNX model locally:", e);
     }
+}
+window.addEventListener('load', initModel);
+
+dropZone.addEventListener("click", () => {
+    if (workspace.style.display !== "block") input.click();
 });
 
 input.addEventListener("change", function() {
@@ -334,7 +155,6 @@ input.addEventListener("change", function() {
             workspace.style.display = "block";
             uploadHint.style.display = "none";
             roiStatus.style.display = "block";
-            
             preview.onload = function() {
                 calculateImagePlacement();
                 resetCropSystem();
@@ -349,7 +169,6 @@ function calculateImagePlacement() {
     const containerH = workspace.clientHeight;
     const imgW = preview.naturalWidth;
     const imgH = preview.naturalHeight;
-    
     const containerRatio = containerW / containerH;
     const imgRatio = imgW / imgH;
     
@@ -372,12 +191,10 @@ function resetCropSystem() {
     actionBtn.innerText = "Confirm Region";
     actionBtn.style.background = "#4f4ad8";
     measureBtn.disabled = true;
-    
     boxW = Math.min(120, imgRenderW * 0.5);
     boxH = Math.min(50, imgRenderH * 0.2);
     boxX = imgRenderX + (imgRenderW - boxW) / 2;
     boxY = imgRenderY + (imgRenderH - boxH) / 2;
-    
     updateCropBoxUI();
 }
 
@@ -390,42 +207,15 @@ function updateCropBoxUI() {
     roiStatus.innerHTML = steps[currentStep].label;
 }
 
-window.addEventListener("resize", () => {
-    if (workspace.style.display === "block") {
-        const oldW = imgRenderW;
-        const oldH = imgRenderH;
-        const oldX = boxX - imgRenderX;
-        const oldY = boxY - imgRenderY;
-        
-        calculateImagePlacement();
-        
-        const scaleW = imgRenderW / oldW;
-        const scaleH = imgRenderH / oldH;
-        
-        boxW *= scaleW;
-        boxH *= scaleH;
-        boxX = imgRenderX + (oldX * scaleW);
-        boxY = imgRenderY + (oldY * scaleH);
-        
-        updateCropBoxUI();
-    }
-});
-
-/* 🔍 Real-Time Magnifier Engine Logic targeting exact Pointer Focus Points */
 function updateMagnifier(pointerX, pointerY) {
     const rect = workspace.getBoundingClientRect();
     const localX = pointerX - rect.left;
     const localY = pointerY - rect.top;
-    
     if (localX < imgRenderX || localX > imgRenderX + imgRenderW || localY < imgRenderY || localY > imgRenderY + imgRenderH) {
         lens.style.display = "none";
         return;
     }
-
-    // 🎯 DYNAMIC AID CORRECTION: Track exactly what point is being edited!
-    let targetWorkspaceX = localX;
-    let targetWorkspaceY = localY;
-
+    let targetWorkspaceX = localX, targetWorkspaceY = localY;
     if (activeDrag === 'tl') { targetWorkspaceX = boxX; targetWorkspaceY = boxY; }
     else if (activeDrag === 'tr') { targetWorkspaceX = boxX + boxW; targetWorkspaceY = boxY; }
     else if (activeDrag === 'bl') { targetWorkspaceX = boxX; targetWorkspaceY = boxY + boxH; }
@@ -434,23 +224,17 @@ function updateMagnifier(pointerX, pointerY) {
     
     const scaleX = preview.naturalWidth / imgRenderW;
     const scaleY = preview.naturalHeight / imgRenderH;
-    
     const trueFileX = (targetWorkspaceX - imgRenderX) * scaleX;
     const trueFileY = (targetWorkspaceY - imgRenderY) * scaleY;
     
     lens.style.display = "block";
-    // Keep lens floating up above finger tracking interaction zone
     lens.style.left = (localX - 60) + "px";
     lens.style.top = (localY - 140) + "px";
-    
     lens.style.backgroundImage = `url('${preview.src}')`;
-    
-    const zoomLevel = 4; // Shifted up to 4x magnification factor for raw pigments
+    const zoomLevel = 4;
     const bgWidth = preview.naturalWidth * (imgRenderW / preview.naturalWidth) * zoomLevel;
     const bgHeight = preview.naturalHeight * (imgRenderH / preview.naturalHeight) * zoomLevel;
-    
     lens.style.backgroundSize = `${bgWidth}px ${bgHeight}px`;
-    
     const bgX = -(trueFileX * (imgRenderW / preview.naturalWidth) * zoomLevel - 60);
     const bgY = -(trueFileY * (imgRenderH / preview.naturalHeight) * zoomLevel - 60);
     lens.style.backgroundPosition = `${bgX}px ${bgY}px`;
@@ -458,84 +242,53 @@ function updateMagnifier(pointerX, pointerY) {
 
 function onPointerDown(e) {
     if (workspace.style.display !== "block" || currentStep >= 3) return;
-    
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
     const target = e.target;
-    if (target.classList.contains('crop-handle')) {
-        activeDrag = target.getAttribute('data-handle');
-    } else if (target === cropBox) {
-        activeDrag = 'move';
-    } else {
-        return;
-    }
-    
+    if (target.classList.contains('crop-handle')) activeDrag = target.getAttribute('data-handle');
+    else if (target === cropBox) activeDrag = 'move';
+    else return;
     e.preventDefault();
-    startPointerX = clientX;
-    startPointerY = clientY;
-    startBoxX = boxX;
-    startBoxY = boxY;
-    startBoxW = boxW;
-    startBoxH = boxH;
-    
+    startPointerX = clientX; startPointerY = clientY;
+    startBoxX = boxX; startBoxY = boxY; startBoxW = boxW; startBoxH = boxH;
     updateMagnifier(clientX, clientY);
 }
 
 function onPointerMove(e) {
     if (!activeDrag) return;
     e.preventDefault();
-    
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    const dx = clientX - startPointerX;
-    const dy = clientY - startPointerY;
+    const dx = clientX - startPointerX, dy = clientY - startPointerY;
     
     if (activeDrag === 'move') {
         boxX = Math.max(imgRenderX, Math.min(startBoxX + dx, imgRenderX + imgRenderW - boxW));
         boxY = Math.max(imgRenderY, Math.min(startBoxY + dy, imgRenderY + imgRenderH - boxH));
     } else {
-        // 🛠️ FIXED: Lower limits shifted to 1px wide/tall for micro chromatography band tracking
         if (activeDrag.includes('r')) boxW = Math.max(1, Math.min(startBoxW + dx, imgRenderX + imgRenderW - startBoxX));
         if (activeDrag.includes('b')) boxH = Math.max(1, Math.min(startBoxH + dy, imgRenderY + imgRenderH - startBoxY));
-        
         if (activeDrag.includes('l')) {
             const potentialW = startBoxW - dx;
-            if (potentialW >= 1) {
-                boxX = Math.max(imgRenderX, startBoxX + dx);
-                boxW = startBoxW + (startBoxX - boxX);
-            }
+            if (potentialW >= 1) { boxX = Math.max(imgRenderX, startBoxX + dx); boxW = startBoxW + (startBoxX - boxX); }
         }
         if (activeDrag.includes('t')) {
             const potentialH = startBoxH - dy;
-            if (potentialH >= 1) {
-                boxY = Math.max(imgRenderY, startBoxY + dy);
-                boxH = startBoxH + (startBoxY - boxY);
-            }
+            if (potentialH >= 1) { boxY = Math.max(imgRenderY, startBoxY + dy); boxH = startBoxH + (startBoxY - boxY); }
         }
     }
-    
     updateCropBoxUI();
     updateMagnifier(clientX, clientY);
 }
 
-function onPointerUp() {
-    activeDrag = null;
-    lens.style.display = "none";
-}
-
 workspace.addEventListener("mousedown", onPointerDown);
 window.addEventListener("mousemove", onPointerMove);
-window.addEventListener("mouseup", onPointerUp);
-
+window.addEventListener("mouseup", () => { activeDrag = null; lens.style.display = "none"; });
 workspace.addEventListener("touchstart", onPointerDown, { passive: false });
 window.addEventListener("touchmove", onPointerMove, { passive: false });
-window.addEventListener("touchend", onPointerUp);
+window.addEventListener("touchend", () => { activeDrag = null; lens.style.display = "none"; });
 
-window.handleCropStep = function() {
+function handleCropStep() {
     if (workspace.style.display !== "block" || currentStep >= 3) return;
-    
     const scaleX = preview.naturalWidth / imgRenderW;
     const scaleY = preview.naturalHeight / imgRenderH;
     
@@ -551,11 +304,9 @@ window.handleCropStep = function() {
     else if (currentStep === 2) rois.upper = targetROI;
     
     currentStep++;
-    
-    if (currentStep < 3) {
-        updateCropBoxUI();
-    } else {
-        roiStatus.innerHTML = "🎉 All Regions Locked! Click 'Measure' below.";
+    if (currentStep < 3) updateCropBoxUI();
+    else {
+        roiStatus.innerHTML = "🎉 Regions Locked! Click 'Measure'.";
         cropBox.style.display = "none";
         actionBtn.innerText = "Reset Framework";
         actionBtn.style.background = "#6c757d";
@@ -563,109 +314,135 @@ window.handleCropStep = function() {
     }
 }
 
-function handleCropReset() {
-    cropBox.style.display = "block";
-    resetCropSystem();
-}
-
 window.handleCropStepBtnRedirect = function() {
-    if (currentStep >= 3) {
-        handleCropReset();
-    } else {
-        handleCropStep();
-    }
+    if (currentStep >= 3) { cropBox.style.display = "block"; resetCropSystem(); }
+    else handleCropStep();
 }
-actionBtn.setAttribute("onclick", "handleCropStepBtnRedirect()");
 
-async function measure(){
-    const file = input.files[0];
-    if(!file || currentStep < 3){
-        alert("Please prepare your boundaries carefully first.");
-        return;
-    }
+// 🧮 Standalone Front-End Color Channel Feature Extractor logic matrix
+function getChannelStats(roi) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const w = Math.max(1, Math.floor(roi.x2 - roi.x1));
+    const h = Math.max(1, Math.floor(roi.y2 - roi.y1));
+    canvas.width = w; canvas.height = h;
+    ctx.drawImage(preview, roi.x1, roi.y1, w, h, 0, 0, w, h);
     
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("rois", JSON.stringify(rois));
+    const imgData = ctx.getImageData(0, 0, w, h).data;
+    let R = [], G = [], B = [], H = [], S = [], V = [], L = [], a_lab = [], b_lab = [], gray = [];
+    let r_over_g = 0, b_over_g = 0, r_over_b = 0;
 
-    try {
-        const res = await fetch(
-            "https://chromasnap1.onrender.com/predict", 
-            {
-                method: "POST",
-                body: formData
-            }
-        );
+    for (let i = 0; i < imgData.length; i += 4) {
+        let r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+        R.push(r); G.push(g); B.push(b);
+        gray.push(0.299 * r + 0.587 * g + 0.114 * b);
         
-        let data = await res.json();
-        console.log("Full Server Response:", data);
+        r_over_g += r / (g === 0 ? 1 : g);
+        b_over_g += b / (g === 0 ? 1 : g);
+        r_over_b += r / (b === 0 ? 1 : b);
 
-        if(data.status === "success"){
-            document.getElementById("conc").innerText = parseFloat(data.value).toFixed(2);
-        } else {
-            document.getElementById("conc").innerText = "Raw Data: " + JSON.stringify(data);
+        // RGB to HSV matrix conversion implementation logic
+        let rNorm = r/255, gNorm = g/255, bNorm = b/255;
+        let max = Math.max(rNorm, gNorm, bNorm), min = Math.min(rNorm, gNorm, bNorm);
+        let hVal = 0, sVal = max === 0 ? 0 : (max - min) / max, vVal = max;
+        if (max !== min) {
+            let d = max - min;
+            switch (max) {
+                case rNorm: hVal = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0); break;
+                case gNorm: hVal = (bNorm - rNorm) / d + 2; break;
+                case bNorm: hVal = (rNorm - gNorm) / d + 4; break;
+            }
+            hVal /= 6;
         }
+        H.push(hVal * 180); S.push(sVal * 255); V.push(vVal * 255);
+
+        // RGB to CIELAB standard processing approximation mapping matrix
+        let X = rNorm * 0.4124564 + gNorm * 0.3575761 + bNorm * 0.1804375;
+        let Y = rNorm * 0.2126729 + gNorm * 0.7151522 + bNorm * 0.0721750;
+        let Z = rNorm * 0.0193339 + gNorm * 0.1191920 + bNorm * 0.9503041;
+        X /= 0.95047; Y /= 1.00000; Z /= 1.08883;
+        let fx = X > 0.008856 ? Math.cbrt(X) : (7.787 * X) + (16 / 116);
+        let fy = Y > 0.008856 ? Math.cbrt(Y) : (7.787 * Y) + (16 / 116);
+        let fz = Z > 0.008856 ? Math.cbrt(Z) : (7.787 * Z) + (16 / 116);
+        L.push((116 * fy) - 16); a_lab.push(500 * (fx - fy)); b_lab.push(200 * (fy - fz));
     }
-    catch(error){
-        console.error(error);
-        alert("Cannot connect to backend server");
-    }
+
+    const mean = arr => arr.reduce((p, c) => p + c, 0) / arr.length;
+    const std = (arr, m) => Math.sqrt(arr.reduce((p, c) => p + Math.pow(c - m, 2), 0) / arr.length);
+
+    let stats = {
+        R_mean: mean(R), G_mean: mean(G), B_mean: mean(B), R_std: std(R, mean(R)), G_std: std(G, mean(G)), B_std: std(B, mean(B)),
+        H_mean: mean(H), S_mean: mean(S), V_mean: mean(V), H_std: std(H, mean(H)), S_std: std(S, mean(S)), V_std: std(V, mean(V)),
+        L_mean: mean(L), a_mean: mean(a_lab), b_mean: mean(b_lab), L_std: std(L, mean(L)), a_std: std(a_lab, mean(a_lab)), b_std: std(b_lab, mean(b_lab)),
+        gray_mean: mean(gray), gray_std: std(gray, mean(gray)),
+        R_over_G: r_over_g / R.length, B_over_G: b_over_g / R.length, R_over_B: r_over_b / R.length
+    };
+    return stats;
 }
-window.measure = measure;
 
-window.uploadFile = async function () {
-    const file = input.files[0];
-    const conc = document.getElementById("conc").innerText;
- 
-    if (!file) {
-        alert("Please select file");
-        return;
-    }
+async function measure() {
+    if (!ortSession) { alert("Engine offline processing initializing, please retry in a second."); return; }
+    
+    // Extract channel metrics matching Python server
+    const f_band = getChannelStats(rois.result);
+    const f_bg = getChannelStats(rois.bg);
+    const f_upper = getChannelStats(rois.upper);
 
-    const filename = Date.now() + "_" + file.name;
-
-    try {
-        const { error: fileError } = await supabase.storage
-            .from(BUCKET)
-            .upload(filename, file);
-
-        if (fileError) {
-            alert(fileError.message);
-            return;
-        }
-
-        const { error } = await supabase
-            .from(TABLE)
-            .insert([
-                {
-                    filename: filename,
-                    date: new Date().toISOString(),
-                    conc: isNaN(parseFloat(conc)) ? 0 : parseFloat(conc)
-                }
-            ]);
-
-        if (error) {
-            alert(error.message);
-            return;
-        }
-
-        alert("Save success");
-    } catch (err) {
-        console.error(err);
-        alert("Upload failed");
-    }
-}
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker registered!', reg))
-        .catch(err => console.error('Service Worker registration failed: ', err));
+    let all_features = {};
+    const prefixMap = [['band', f_band], ['bg', f_bg], ['upper', f_upper]];
+    prefixMap.forEach(([prefix, data]) => {
+        for(let k in data) { all_features[`${prefix}_${k}`] = data[k]; }
     });
-  }
-</script>
 
+    const metrics = ['R_mean', 'G_mean', 'B_mean', 'H_mean', 'S_mean', 'V_mean', 'L_mean', 'a_mean', 'b_mean', 'gray_mean'];
+    metrics.forEach(m => {
+        all_features[`delta_${m}`] = f_band[m] - f_bg[m];
+        all_features[`band_minus_upper_${m}`] = f_band[m] - f_upper[m];
+    });
+
+    const feature_order = [
+        'band_R_mean', 'band_G_mean', 'band_B_mean', 'band_R_std', 'band_G_std', 'band_B_std',
+        'band_H_mean', 'band_S_mean', 'band_V_mean', 'band_H_std', 'band_S_std', 'band_V_std',
+        'band_L_mean', 'band_a_mean', 'band_b_mean', 'band_L_std', 'band_a_std', 'band_b_std',
+        'band_gray_mean', 'band_gray_std', 'band_R_over_G', 'band_B_over_G', 'band_R_over_B',
+        'bg_R_mean', 'bg_G_mean', 'bg_B_mean', 'bg_R_std', 'bg_G_std', 'bg_B_std',
+        'bg_H_mean', 'bg_S_mean', 'bg_V_mean', 'bg_H_std', 'bg_S_std', 'bg_V_std',
+        'bg_L_mean', 'bg_a_mean', 'bg_b_mean', 'bg_L_std', 'bg_a_std', 'bg_b_std',
+        'bg_gray_mean', 'bg_gray_std', 'bg_R_over_G', 'bg_B_over_G', 'bg_R_over_B',
+        'upper_R_mean', 'upper_G_mean', 'upper_B_mean', 'upper_R_std', 'upper_G_std', 'upper_B_std',
+        'upper_H_mean', 'upper_S_mean', 'upper_V_mean', 'upper_H_std', 'upper_S_std', 'upper_V_std',
+        'upper_L_mean', 'upper_a_mean', 'upper_b_mean', 'upper_L_std', 'upper_a_std', 'upper_b_std',
+        'upper_gray_mean', 'upper_gray_std', 'upper_R_over_G', 'upper_B_over_G', 'upper_R_over_B',
+        'delta_R_mean', 'band_minus_upper_R_mean', 'delta_G_mean', 'band_minus_upper_G_mean',
+        'delta_B_mean', 'band_minus_upper_B_mean', 'delta_H_mean', 'band_minus_upper_H_mean',
+        'delta_S_mean', 'band_minus_upper_S_mean', 'delta_V_mean', 'band_minus_upper_V_mean',
+        'delta_L_mean', 'band_minus_upper_L_mean', 'delta_a_mean', 'band_minus_upper_a_mean',
+        'delta_b_mean', 'band_minus_upper_b_mean', 'delta_gray_mean', 'band_minus_upper_gray_mean'
+    ];
+
+    const inputArray = new Float32Array(92);
+    feature_order.forEach((name, idx) => { inputArray[idx] = all_features[name] || 0; });
+
+    // Execute Client-Side Web Assembly inference execution
+    const tensorInput = new ort.Tensor('float32', inputArray, [1, 92]);
+    const feeds = { [ortSession.inputNames[0]]: tensorInput };
+    const results = await ortSession.run(feeds);
+    const predictionValue = results[ortSession.outputNames[0]].data[0];
+
+    document.getElementById("conc").innerText = parseFloat(predictionValue).toFixed(2);
+}
+
+async function uploadFile() {
+    if(!input.files[0]) { alert("Please select a file first"); return; }
+    const record = {
+        filename: Date.now() + "_" + input.files[0].name,
+        date: new Date().toISOString(),
+        conc: parseFloat(document.getElementById("conc").innerText) || 0,
+        imgBase64: preview.src // Store image completely locally as an offline data URL string
+    };
+    await saveToLocalDB("Strip", record);
+    alert("Saved completely offline successfully!");
+}
+</script>
 </body>
 </html>
