@@ -111,16 +111,14 @@ async function measure() {
     const outputTensor = yoloResults[yoloSession.outputNames[0]];
     const outputField = outputTensor.data; 
     
-    // --- DIAGNOSTICS LOGGING ---
     console.log("--- ChromaSnap Live Diagnostics ---");
     console.log("Your Model Output Shape:", outputTensor.dims); 
     console.log("Flattened Array Size:", outputField.length);
 
     let bestConf = 0, bestBox = null;
-    let maxFoundConf = 0; // Tracks the absolute highest confidence found regardless of threshold
+    let maxFoundConf = 0; 
     const totalDetections = 8400; 
     
-    // Safety check to ensure we don't read out of array bounds if model structure differs
     if (outputField.length < 6 * totalDetections) {
         console.warn(`Warning: Expected at least ${6 * totalDetections} elements, but got ${outputField.length}. Your ONNX model may have a different configuration.`);
     }
@@ -134,8 +132,8 @@ async function measure() {
             maxFoundConf = conf;
         }
 
-        // Lowered threshold slightly to 0.25 to make detection less punishing
-        if(conf > bestConf && conf > 0.25) { 
+        // Changed confidence threshold match window to 5% (0.05)
+        if(conf > bestConf && conf > 0.05) { 
             bestConf = conf;
             bestBox = {
                 cx: outputField[0 * totalDetections + i], cy: outputField[1 * totalDetections + i],
@@ -148,7 +146,6 @@ async function measure() {
     console.log("Highest Confidence Found in Image:", (maxFoundConf * 100).toFixed(1) + "%");
 
     if(!bestBox) { 
-        // Modified UI output to clearly explain WHY it failed
         document.getElementById("type").innerText = `Not Detected (Max Conf: ${(maxFoundConf * 100).toFixed(1)}%)`; 
         document.getElementById("conc").innerText = "-";
         return; 
