@@ -133,7 +133,7 @@ async function measure() {
         }
 
         // Changed confidence threshold match window to 5% (0.05)
-        if(conf > bestConf && conf > 0.05) { 
+        if(conf > bestConf && conf > 0.01) { 
             bestConf = conf;
             bestBox = {
                 cx: outputField[0 * totalDetections + i], cy: outputField[1 * totalDetections + i],
