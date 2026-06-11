@@ -36,7 +36,7 @@ button{ width:90%; padding:12px; font-size:16px; } .result{ width:90%; }
 <div class="UP"><img id="preview"></div>
 
 <form id="uploadForm1" style="display:flex; flex-direction:column; align-items:center;">
-    <input type="file" id="imgIN" accept=".png, .jpg, .jpeg" style="margin-top:20px;">
+    <input type="file" id="imgIN" accept="image/*" style="margin-top:20px;">
     <button type="button" onclick="measure()">Measure</button>
     <button type="button" onclick="uploadFile()">Save</button>
 </form>
@@ -63,9 +63,13 @@ const DB_NAME = "ChromaSnapLocalDB";
 let yoloSession = null, xgbSession = null;
 
 async function loadModels() {
-    yoloSession = await ort.InferenceSession.create('./best.onnx');
-    xgbSession = await ort.InferenceSession.create('./xgb_regression.onnx');
-    console.log("LAMP Offline Engines successfully active.");
+    try {
+        yoloSession = await ort.InferenceSession.create('./best.onnx');
+        xgbSession = await ort.InferenceSession.create('./xgb_regression.onnx');
+        console.log("LAMP Offline Engines successfully active.");
+    } catch (e) {
+        console.error("Failed to load ONNX models. Check file paths or CORS policy:", e);
+    }
 }
 window.addEventListener('load', loadModels);
 
@@ -75,22 +79,12 @@ const preview = document.getElementById("preview");
 input.addEventListener("change", function(){
     const file = this.files[0];
     if(file){
-        // สร้าง Array เพื่อตรวจสอบนามสกุลไฟล์ที่อนุญาต
-        const allowedExtensions = /(\.png|\.jpg|\.jpeg)$/i;
-        if(!allowedExtensions.exec(file.name)){
-            alert('กรุณาเลือกไฟล์รูปภาพที่เป็น .png, .jpg หรือ .jpeg เท่านั้นครับ');
-            this.value = ''; // ล้างค่าไฟล์ที่เลือกผิด
-            preview.style.display = "none";
-            return false;
-        }
-
         const reader = new FileReader();
         reader.onload = function(e){ preview.src = e.target.result; preview.style.display = "block"; }
         reader.readAsDataURL(file);
     }
 });
 
-// Converts image data into unified YOLOv8 float tensor [1, 3, 640, 640]
 function preprocessYOLO(imgElement) {
     const canvas = document.createElement('canvas');
     canvas.width = 640; canvas.height = 640;
@@ -109,20 +103,39 @@ function preprocessYOLO(imgElement) {
 
 async function measure() {
     if(!input.files[0]) { alert("Please select image"); return; }
+    if(!yoloSession) { alert("YOLO model is not loaded yet. Check console errors."); return; }
     
     const tensorInput = preprocessYOLO(preview);
     const yoloResults = await yoloSession.run({ [yoloSession.inputNames[0]]: tensorInput });
-    const outputField = yoloResults[yoloSession.outputNames[0]].data; 
     
-    // Simplifed structural extraction matching high confidence tube logic box coordinates
+    const outputTensor = yoloResults[yoloSession.outputNames[0]];
+    const outputField = outputTensor.data; 
+    
+    // --- DIAGNOSTICS LOGGING ---
+    console.log("--- ChromaSnap Live Diagnostics ---");
+    console.log("Your Model Output Shape:", outputTensor.dims); 
+    console.log("Flattened Array Size:", outputField.length);
+
     let bestConf = 0, bestBox = null;
-    const totalDetections = 8400; // YOLOv8 640x640 standard output shape columns count
+    let maxFoundConf = 0; // Tracks the absolute highest confidence found regardless of threshold
+    const totalDetections = 8400; 
     
+    // Safety check to ensure we don't read out of array bounds if model structure differs
+    if (outputField.length < 6 * totalDetections) {
+        console.warn(`Warning: Expected at least ${6 * totalDetections} elements, but got ${outputField.length}. Your ONNX model may have a different configuration.`);
+    }
+
     for(let i=0; i<totalDetections; i++) {
-        let negConf = outputField[4 * totalDetections + i];
-        let posConf = outputField[5 * totalDetections + i];
+        let negConf = outputField[4 * totalDetections + i] || 0;
+        let posConf = outputField[5 * totalDetections + i] || 0;
         let conf = Math.max(negConf, posConf);
-        if(conf > bestConf && conf > 0.30) {
+        
+        if (conf > maxFoundConf) {
+            maxFoundConf = conf;
+        }
+
+        // Lowered threshold slightly to 0.25 to make detection less punishing
+        if(conf > bestConf && conf > 0.25) { 
             bestConf = conf;
             bestBox = {
                 cx: outputField[0 * totalDetections + i], cy: outputField[1 * totalDetections + i],
@@ -132,8 +145,20 @@ async function measure() {
         }
     }
 
-    if(!bestBox) { document.getElementById("type").innerText = "Not Detected"; return; }
-    if(bestBox.cls === "negative") { document.getElementById("type").innerText = "Negative"; document.getElementById("conc").innerText = "-"; return; }
+    console.log("Highest Confidence Found in Image:", (maxFoundConf * 100).toFixed(1) + "%");
+
+    if(!bestBox) { 
+        // Modified UI output to clearly explain WHY it failed
+        document.getElementById("type").innerText = `Not Detected (Max Conf: ${(maxFoundConf * 100).toFixed(1)}%)`; 
+        document.getElementById("conc").innerText = "-";
+        return; 
+    }
+    
+    if(bestBox.cls === "negative") { 
+        document.getElementById("type").innerText = "Negative"; 
+        document.getElementById("conc").innerText = "-"; 
+        return; 
+    }
 
     document.getElementById("type").innerText = "Positive";
 
@@ -150,7 +175,6 @@ async function measure() {
 
     for(let i=0; i<imgData.length; i+=4) {
         let r=imgData[i]/255, g=imgData[i+1]/255, b=imgData[i+2]/255;
-        // Color conversion matching math logic mapping matrix
         let X = r*0.4124 + g*0.3576 + b*0.1804, Y = r*0.2126 + g*0.7152 + b*0.0722, Z = r*0.0193 + g*0.1192 + b*0.9504;
         let fx = X > 0.008856 ? Math.cbrt(X) : 7.787*X + 16/116, fy = Y > 0.008856 ? Math.cbrt(Y) : 7.787*Y + 16/116, fz = Z > 0.008856 ? Math.cbrt(Z) : 7.787*Z + 16/116;
         sumL += (116*fy - 16); sumA += 500*(fx - fy); sumB += 200*(fy - fz);
