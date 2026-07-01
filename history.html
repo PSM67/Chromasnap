@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>ChromaSnap — History</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Quicksand:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ===================================================
+       ChromaSnap — same design system as app_strip.html
+    =================================================== */
+    :root {
+      --bg:          #F5EFE6;
+      --bg-dark:     #1C1410;
+      --surface:     #FDFAF5;
+      --surface-2:   #EDE6DA;
+      --wood:        #8B6245;
+      --wood-deep:   #4A3322;
+      --amber:       #C9924F;
+      --amber-soft:  rgba(201,146,79,0.14);
+      --sakura:      #C09098;
+      --sakura-soft: rgba(192,144,152,0.14);
+      --matcha:      #7A9B82;
+      --matcha-soft: rgba(122,155,130,0.14);
+      --positive:    #C95A72;
+      --negative:    #5A8A62;
+      --text:        #2E2118;
+      --text-2:      #7A6A5A;
+      --text-3:      #A99888;
+      --border:      rgba(139,98,69,0.12);
+      --safe-top:    env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body { min-height: 100dvh; background: var(--bg); }
+    body {
+      font-family: 'Quicksand', 'Sarabun', sans-serif;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============ TOP BAR ============ */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(var(--safe-top) + 14px) 20px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Shippori Mincho', serif;
+      font-size: 0.98rem;
+      color: var(--wood-deep);
+      letter-spacing: 0.06em;
+    }
+    .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sakura); }
+    .badge {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--sakura);
+      border: 1px solid var(--sakura);
+      opacity: 0.85;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .top-icons { display: flex; gap: 8px; }
+    .top-icon {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .top-icon:active { background: var(--border); }
+
+    /* ============ TAB ROW (reuses app_strip's chip pattern) ============ */
+    .tab-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 16px 20px 4px;
+      background: var(--bg);
+    }
+    .chip {
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.18s;
+      letter-spacing: 0.02em;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .chip.active {
+      background: var(--wood-deep);
+      border-color: var(--wood-deep);
+      color: rgba(245,239,230,0.95);
+    }
+    .chip:active { opacity: 0.75; }
+
+    /* ============ CONTENT ============ */
+    .content {
+      flex: 1;
+      padding: 16px 20px calc(var(--safe-bottom) + 24px);
+    }
+    .record-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .record-card {
+      display: flex;
+      gap: 12px;
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+    }
+    .record-idx {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text-3);
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .record-swatch {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .record-body { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .record-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .record-title { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+    .record-conc {
+      font-family: 'Shippori Mincho', serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .record-conc span { font-size: 0.68rem; color: var(--text-3); font-family: 'Quicksand', sans-serif; font-weight: 500; }
+    .record-date { font-size: 0.68rem; color: var(--text-3); }
+
+    .pill {
+      padding: 3px 11px;
+      border-radius: 20px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .pill.positive { background: rgba(201,90,114,0.1); color: var(--positive); }
+    .pill.negative { background: rgba(90,138,98,0.1);  color: var(--negative); }
+    .pill.unknown  { background: var(--amber-soft);    color: var(--amber);    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 60px 0;
+      color: var(--text-3);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .empty-state i { font-size: 2rem; opacity: 0.35; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="app-brand">
+      <div class="brand-dot"></div>
+      ChromaSnap
+      <span class="badge">HISTORY</span>
+    </div>
+    <div class="top-icons">
+      <a href="homepage.html" class="top-icon" title="Back"><i class="fa-solid fa-house"></i></a>
+      <button class="top-icon" id="clearBtn" title="Clear all"><i class="fa-solid fa-trash"></i></button>
+    </div>
+  </div>
+
+  <div class="tab-row">
+    <div class="chip active" data-tab="lamp" onclick="switchTab('lamp',this)">
+      <i class="fa-solid fa-vial"></i> LAMP Color
+    </div>
+    <div class="chip" data-tab="strip" onclick="switchTab('strip',this)">
+      <i class="fa-solid fa-barcode"></i> Strip DNA
+    </div>
+    <div class="chip" data-tab="membrane" onclick="switchTab('membrane',this)">
+      <i class="fa-solid fa-droplet"></i> Membrane
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="list-lamp" class="record-list"></div>
+    <div id="list-strip" class="record-list" style="display:none;"></div>
+    <div id="list-membrane" class="record-list" style="display:none;"></div>
+  </div>
+
+  <script>
+  const DB_NAME = 'ChromaSnapLocalDB';
+  const DB_VERSION = 1;
+
+  function getDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('Chromasnaptab'))
+          db.createObjectStore('Chromasnaptab', { autoIncrement: true });
+        if (!db.objectStoreNames.contains('Strip'))
+          db.createObjectStore('Strip', { autoIncrement: true });
+      };
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror = () => reject('DB error');
+    });
+  }
+
+  async function loadAll(store) {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const req = tx.objectStore(store).getAll();
+      req.onsuccess = () => resolve(req.result.reverse());
+      req.onerror = () => reject([]);
+    });
+  }
+
+  // type/result text may be localized (EN/TH/JP) — match across all three
+  function pillClass(text) {
+    if (!text) return 'unknown';
+    const t = text.toLowerCase();
+    if (t.includes('pos') || t.includes('พบ') || t.includes('陽')) return 'positive';
+    if (t.includes('neg') || t.includes('ไม่พบ') || t.includes('陰')) return 'negative';
+    return 'unknown';
+  }
+
+  function fmtDate(iso) {
+    return new Date(iso).toLocaleString();
+  }
+
+  function emptyState(icon, msg) {
+    return `<div class="empty-state"><i class="fa-solid ${icon}"></i><p>${msg}</p></div>`;
+  }
+
+  function renderLamp(records) {
+    const el = document.getElementById('list-lamp');
+    if (!records.length) { el.innerHTML = emptyState('fa-vial', 'No LAMP scans yet'); return; }
+    el.innerHTML = records.map((r, i) => `
+      <div class="record-card">
+        <div class="record-idx">${records.length - i}</div>
+        <div class="record-body">
+          <div class="record-row">
+            <span class="record-title">${r.pathogen || '—'}</span>
+            <span class="pill ${pillClass(r.type)}">${r.type || '—'}</span>
+          </div>
+          <div class="record-conc">${parseFloat(r.conc || 0).toFixed(2)} <span>ng/μL</span></div>
+          <div class="record-date">${fmtDate(r.date)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderStripDNA(records) {
+    const el = document.getElementById('list-strip');
+    if (!records.length) { el.innerHTML = emptyState('fa-barcode', 'No strip DNA scans yet'); return; }
+    el.innerHTML = records.map((r, i) => `
+      <div class="record-card">
+        <div class="record-idx">${records.length - i}</div>
+        <div class="record-body">
+          <div class="record-row">
+            <span class="record-title">DNA Concentration Test</span>
+          </div>
+          <div class="record-conc">${parseFloat(r.conc || 0).toFixed(2)} <span>ng/μL</span></div>
+          <div class="record-date">${fmtDate(r.date)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderMembrane(records) {
+    const el = document.getElementById('list-membrane');
+    if (!records.length) { el.innerHTML = emptyState('fa-droplet', 'No membrane scans yet'); return; }
+    el.innerHTML = records.map((r, i) => `
+      <div class="record-card">
+        <div class="record-swatch" style="background:${r.color || '#ccc'};"></div>
+        <div class="record-body">
+          <div class="record-row">
+            <span class="record-title">Membrane Test</span>
+            <span class="pill ${pillClass(r.result)}">${r.result || '—'}</span>
+          </div>
+          <div class="record-date">${fmtDate(r.date)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function init() {
+    const [lamp, strip] = await Promise.all([
+      loadAll('Chromasnaptab').catch(() => []),
+      loadAll('Strip').catch(() => [])
+    ]);
+    renderLamp(lamp);
+    renderStripDNA(strip.filter(r => r.mode !== 'membrane'));
+    renderMembrane(strip.filter(r => r.mode === 'membrane'));
+  }
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab-row .chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    ['lamp','strip','membrane'].forEach(t =>
+      document.getElementById('list-' + t).style.display = (t === tab ? 'flex' : 'none'));
+  }
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    if (!confirm('Clear all history on this device? This cannot be undone.')) return;
+    indexedDB.deleteDatabase(DB_NAME);
+    location.reload();
+  });
+
+  init();
+  </script>
+</body>
+</html>
