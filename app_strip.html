@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>ChromaSnap — Strip</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Quicksand:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ===================================================
+       ChromaSnap Strip App — Same design as Color App
+       Warm oat tones, split layout, easy to read
+    =================================================== */
+    :root {
+      --bg:          #F5EFE6;
+      --bg-dark:     #1C1410;
+      --surface:     #FDFAF5;
+      --surface-2:   #EDE6DA;
+      --wood:        #8B6245;
+      --wood-deep:   #4A3322;
+      --amber:       #C9924F;
+      --amber-soft:  rgba(201,146,79,0.14);
+      --sakura:      #C09098;
+      --sakura-soft: rgba(192,144,152,0.14);
+      --matcha:      #7A9B82;
+      --positive:    #C95A72;
+      --negative:    #5A8A62;
+      --text:        #2E2118;
+      --text-2:      #7A6A5A;
+      --text-3:      #A99888;
+      --border:      rgba(139,98,69,0.12);
+      --safe-top:    env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%; height: 100dvh;
+      overflow: hidden;
+      background: var(--bg-dark);
+    }
+    body {
+      font-family: 'Quicksand', 'Sarabun', sans-serif;
+      display: flex;
+      flex-direction: column;
+      color: var(--text);
+    }
+
+    /* ============ VIEWFINDER ============ */
+    .viewfinder {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+      background: var(--bg-dark);
+      min-height: 0;
+    }
+    #previewImg {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: none;
+      background: #0A0806;
+    }
+    .vf-idle {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .vf-idle-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: rgba(192,144,152,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: rgba(192,144,152,0.7);
+      border: 1.5px solid rgba(192,144,152,0.22);
+    }
+    .vf-idle p {
+      color: rgba(245,239,230,0.45);
+      font-size: 0.82rem;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    /* Corner guides — taller for strip orientation */
+    .scan-frame {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .scan-frame::before, .scan-frame::after,
+    .scan-frame span::before, .scan-frame span::after {
+      content: '';
+      position: absolute;
+      width: 22px; height: 22px;
+      border-style: solid;
+      border-color: rgba(192,144,152,0.4);
+    }
+    .scan-frame::before  { top:56px; left:18px;  border-width: 1.5px 0 0 1.5px; }
+    .scan-frame::after   { top:56px; right:18px; border-width: 1.5px 1.5px 0 0; }
+    .scan-frame span::before { bottom:0; left:18px;  border-width: 0 0 1.5px 1.5px; }
+    .scan-frame span::after  { bottom:0; right:18px; border-width: 0 1.5px 1.5px 0; }
+
+    /* Top bar */
+    .top-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(var(--safe-top) + 8px) 18px 10px;
+      background: linear-gradient(to bottom, rgba(28,20,16,0.8) 0%, transparent 100%);
+    }
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Shippori Mincho', serif;
+      font-size: 0.95rem;
+      color: rgba(245,239,230,0.88);
+      letter-spacing: 0.06em;
+    }
+    /* Strip accent dot = sakura pink instead of amber */
+    .brand-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--sakura);
+      opacity: 0.9;
+    }
+    .badge {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.55rem;
+      line-height: 1.5;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--sakura);
+      border: 1px solid rgba(192,144,152,0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .top-icons { display: flex; gap: 8px; }
+    .top-icon {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: rgba(245,239,230,0.08);
+      border: 1px solid rgba(245,239,230,0.1);
+      color: rgba(245,239,230,0.7);
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .top-icon:active { background: rgba(245,239,230,0.16); }
+
+    /* Analyzing overlay */
+    .overlay-analyze {
+      position: absolute;
+      inset: 0;
+      background: rgba(28,20,16,0.72);
+      backdrop-filter: blur(2px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 30;
+    }
+    .overlay-analyze.on { display: flex; }
+    .spin-ring {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(192,144,152,0.18);
+      border-top-color: var(--sakura);
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .overlay-analyze p {
+      font-size: 0.8rem;
+      color: rgba(245,239,230,0.7);
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+
+    /* ============ BOTTOM PANEL ============ */
+    .bottom-panel {
+      background: var(--bg);
+      padding: 18px 22px calc(var(--safe-bottom) + 18px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .row-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      text-transform: uppercase;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+
+    /* Mode row — Strip / Membrane selector */
+    .mode-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      row-gap: 6px;
+    }
+    .chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.18s;
+      letter-spacing: 0.02em;
+    }
+    .chip.active {
+      background: var(--wood-deep);
+      border-color: var(--wood-deep);
+      color: rgba(245,239,230,0.95);
+    }
+    .chip:active { opacity: 0.75; }
+
+    /* Info row (replaces pathogen chips — strip has no pathogen select) */
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mode-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mode-label i { color: var(--sakura); font-size: 0.75rem; }
+    .today-count {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .today-count span {
+      color: var(--sakura);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* Capture row — identical to Color app */
+    .capture-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+    }
+    .side-btn {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1.5px solid var(--border);
+      color: var(--text-2);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.18s;
+    }
+    .side-btn:active { background: var(--surface); transform: scale(0.94); }
+
+    /* Capture btn — sakura tinted ring */
+    .capture-btn {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      background: var(--wood-deep);
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow:
+        0 4px 18px rgba(46,33,24,0.28),
+        0 1px 0 rgba(245,230,200,0.15) inset;
+      transition: transform 0.14s, box-shadow 0.14s;
+    }
+    .capture-btn:active {
+      transform: scale(0.91);
+      box-shadow: 0 2px 8px rgba(46,33,24,0.2);
+    }
+    .capture-btn i { font-size: 1.5rem; color: rgba(245,230,200,0.9); }
+    #imgInput { display: none; }
+
+    /* ============ RESULT SHEET — same structure as Color ============ */
+    .result-sheet {
+      position: fixed;
+      inset: 0;
+      background: rgba(46,33,24,0.3);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .result-sheet.open { opacity: 1; pointer-events: auto; }
+    .sheet-body {
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      padding: 0 22px calc(var(--safe-bottom) + 22px);
+      width: 100%;
+      max-height: 92dvh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .result-sheet.open .sheet-body { transform: translateY(0); }
+
+    .handle {
+      width: 36px; height: 4px;
+      background: var(--surface-2);
+      border-radius: 2px;
+      margin: 14px auto 22px;
+    }
+
+    /* Headline */
+    .result-headline {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-label {
+      font-family: 'Shippori Mincho', serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    .result-sub {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+    .status-pill {
+      padding: 7px 16px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: var(--sakura-soft);
+      color: var(--sakura);
+      white-space: nowrap;
+    }
+    .status-pill.positive { background: rgba(201,90,114,0.1); color: var(--positive); }
+    .status-pill.negative { background: rgba(90,138,98,0.1);  color: var(--negative); }
+    .status-pill.unknown  { background: var(--amber-soft);    color: var(--amber);    }
+
+    /* Membrane tap-to-sample */
+    .tap-hint {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      pointer-events: none;
+      background: rgba(10,8,6,0.28);
+    }
+    .tap-hint-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: rgba(192,144,152,0.16);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.9rem;
+      color: rgba(245,239,230,0.92);
+      border: 1.5px solid rgba(245,239,230,0.35);
+      animation: tapPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes tapPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.08); opacity: 0.8; }
+    }
+    .tap-hint p {
+      color: rgba(245,239,230,0.92);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding: 0 30px;
+    }
+    .tap-marker {
+      position: absolute;
+      width: 34px; height: 34px;
+      border: 2.5px solid rgba(245,239,230,0.95);
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.35), 0 2px 10px rgba(0,0,0,0.4);
+      transform: translate(-50%, -50%);
+      display: none;
+      pointer-events: none;
+    }
+
+    /* Concentration highlight — big number like Color app */
+    .conc-highlight {
+      background: var(--surface-2);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .conc-num {
+      font-family: 'Shippori Mincho', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .conc-unit {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+    .conc-lbl {
+      margin-left: auto;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    /* 3 zone swatches — horizontal same style as color swatch row */
+    .zones-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .zone-card {
+      flex: 1;
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .zone-card .z-lbl {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+    .zone-swatch {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      margin: 0 auto 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .zone-rgb {
+      font-size: 0.58rem;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+
+    /* Metrics grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .metric-card {
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .mc-lbl {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 5px;
+    }
+    .mc-val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    /* Result thumb */
+    .result-thumb {
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      display: none;
+      background: var(--surface-2);
+    }
+
+    /* Actions */
+    .sheet-actions { display: flex; gap: 10px; }
+    .s-btn {
+      flex: 1;
+      height: 48px;
+      border-radius: 14px;
+      border: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: 'Quicksand', sans-serif;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all 0.18s;
+    }
+    .s-btn.primary {
+      background: var(--wood-deep);
+      color: rgba(245,230,200,0.95);
+      box-shadow: 0 3px 12px rgba(46,33,24,0.2);
+    }
+    .s-btn.ghost {
+      background: var(--surface-2);
+      color: var(--text-2);
+    }
+    .s-btn:active { opacity: 0.78; transform: scale(0.97); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 16px);
+      left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: var(--wood-deep);
+      color: rgba(245,230,200,0.92);
+      padding: 11px 20px;
+      border-radius: 30px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex; align-items: center; gap: 9px;
+      z-index: 200;
+      transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
+      white-space: nowrap;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast-undo { color: var(--sakura); cursor: pointer; font-weight: 700; margin-left: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- VIEWFINDER -->
+  <div class="viewfinder">
+    <img id="previewImg" alt="Test Strip">
+
+    <div class="vf-idle" id="idleHint">
+      <div class="vf-idle-icon"><i class="fa-solid fa-barcode"></i></div>
+      <p data-i18n-html="idle_hint_strip">Capture test strip<br>analyzed automatically</p>
+    </div>
+
+    <div class="scan-frame"><span></span></div>
+
+    <div class="tap-hint" id="tapHint">
+      <div class="tap-hint-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+      <p data-i18n-html="tap_hint_membrane">Tap the colored zone<br>you want to test</p>
+    </div>
+    <div class="tap-marker" id="tapMarker"></div>
+
+    <div class="top-bar">
+      <div class="app-brand">
+        <div class="brand-dot"></div>
+        ChromaSnap
+        <span class="badge" id="modeBadge">STRIP</span>
+      </div>
+      <div class="top-icons">
+        <a href="homepage.html" class="top-icon" title="Back"><i class="fa-solid fa-house"></i></a>
+        <a href="history.html" class="top-icon"><i class="fa-solid fa-clock-rotate-left"></i></a>
+      </div>
+    </div>
+
+    <div class="overlay-analyze" id="analyzeOverlay">
+      <div class="spin-ring"></div>
+      <p data-i18n="processing">Processing...</p>
+    </div>
+  </div>
+
+  <!-- BOTTOM PANEL -->
+  <div class="bottom-panel">
+    <div class="mode-row">
+      <span class="row-label" data-i18n="row_label_mode">Mode</span>
+      <div class="chip active" data-value="strip" onclick="pickMode(this)" data-i18n="chip_strip">Strip</div>
+      <div class="chip" data-value="membrane" onclick="pickMode(this)" data-i18n="chip_membrane">Membrane</div>
+    </div>
+
+    <div class="info-row">
+      <div class="mode-label">
+        <i class="fa-solid fa-dna"></i>
+        <span id="modeLabelText">DNA Concentration Test</span>
+      </div>
+      <div class="today-count">
+        <i class="fa-solid fa-barcode" style="font-size:0.7rem;"></i>
+        <span id="todayCount">0</span> <span data-i18n="today_suffix">today</span>
+      </div>
+    </div>
+
+    <div class="capture-row">
+      <label for="imgInput" class="side-btn" title="Gallery">
+        <i class="fa-solid fa-images"></i>
+      </label>
+      <button class="capture-btn" onclick="document.getElementById('imgInput').click()">
+        <i class="fa-solid fa-camera"></i>
+      </button>
+      <div class="side-btn" style="visibility:hidden;"></div>
+    </div>
+  </div>
+
+  <input type="file" id="imgInput" accept="image/*" capture="environment">
+
+  <!-- RESULT SHEET -->
+  <div class="result-sheet" id="resultSheet" onclick="handleBgClick(event)">
+    <div class="sheet-body" id="sheetBody">
+      <div class="handle"></div>
+
+      <div class="result-headline">
+        <div>
+          <div class="result-label" id="resultLabelText">Strip Result</div>
+          <div class="result-sub" id="resultSub">DNA concentration analysis</div>
+        </div>
+        <div class="status-pill" id="statusPill">Complete</div>
+      </div>
+
+      <!-- STRIP MODE RESULT -->
+      <div id="stripResultBlock">
+        <!-- Big concentration number -->
+        <div class="conc-highlight">
+          <div class="conc-num" id="rConc">—</div>
+          <div class="conc-unit">ng / μL</div>
+          <div class="conc-lbl" data-i18n="lbl_concentration">Concentration</div>
+        </div>
+
+        <!-- 3 zone swatches -->
+        <div class="zones-row">
+          <div class="zone-card">
+            <div class="z-lbl" data-i18n="lbl_result_band">Result Band</div>
+            <div class="zone-swatch" id="swatchResult"></div>
+            <div class="zone-rgb" id="rgbResult">—</div>
+          </div>
+          <div class="zone-card">
+            <div class="z-lbl" data-i18n="lbl_background">Background</div>
+            <div class="zone-swatch" id="swatchBg"></div>
+            <div class="zone-rgb" id="rgbBg">—</div>
+          </div>
+          <div class="zone-card">
+            <div class="z-lbl" data-i18n="lbl_control_band">Control Band</div>
+            <div class="zone-swatch" id="swatchCtrl"></div>
+            <div class="zone-rgb" id="rgbCtrl">—</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_result_band_r">Result Band R</div>
+            <div class="mc-val" id="mBandR">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_result_band_g">Result Band G</div>
+            <div class="mc-val" id="mBandG">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="label_scanned">Scanned</div>
+            <div class="mc-val" id="rTime" style="font-size:0.85rem;">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_auto_zones">Auto-zones</div>
+            <div class="mc-val" style="font-size:0.85rem;" data-i18n="val_3_regions">3 regions</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMBRANE MODE RESULT -->
+      <div id="membraneResultBlock" style="display:none;">
+        <div class="conc-highlight">
+          <div class="conc-num" id="mResultLabel" style="font-size:1.9rem;">—</div>
+          <div class="conc-lbl" data-i18n="membrane_result_title">Membrane Result</div>
+        </div>
+
+        <div class="zones-row">
+          <div class="zone-card">
+            <div class="z-lbl" data-i18n="lbl_tapped_color">Tapped Color</div>
+            <div class="zone-swatch" id="swatchMembrane" style="width:48px;height:48px;"></div>
+            <div class="zone-rgb" id="rgbMembrane">—</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_hue">Hue</div>
+            <div class="mc-val" id="mHue">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_saturation">Saturation</div>
+            <div class="mc-val" id="mSat">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_brightness">Brightness</div>
+            <div class="mc-val" id="mVal">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="label_scanned">Scanned</div>
+            <div class="mc-val" id="mTime" style="font-size:0.85rem;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <img class="result-thumb" id="resultThumb" alt="">
+
+      <div class="sheet-actions">
+        <button class="s-btn ghost" onclick="retake()">
+          <i class="fa-solid fa-rotate-left"></i> <span data-i18n="btn_retake">Retake</span>
+        </button>
+        <button class="s-btn primary" onclick="saveAndClose()">
+          <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <i class="fa-solid fa-circle-check" style="color:var(--matcha);"></i>
+    <span data-i18n="toast_saved">Saved</span>
+    <span class="toast-undo" onclick="undoSave()" data-i18n="toast_undo">Undo</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  <script src="translations.js"></script>
+  <script>
+  // ============================================================
+  //  ChromaSnap Strip App — Auto-split 3 zones, no user input
+  // ============================================================
+  const currentLang = localStorage.getItem('cs_lang') || 'en';
+  function T(key) {
+    const dict = window.translations || {};
+    return (dict[currentLang] && dict[currentLang][key])
+        || (dict.en && dict.en[key])
+        || key;
+  }
+  function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.dataset.i18nHtml); });
+  }
+
+  let ortSession = null;
+  let currentImgUrl = null;
+  let toastTimer = null;
+  let todayCount = parseInt(localStorage.getItem('cs_strip_today') || '0');
+  let todayDate = localStorage.getItem('cs_strip_today_date') || '';
+  let selectedMode = localStorage.getItem('cs_strip_mode') || 'strip';
+
+  (async () => {
+    applyI18n();
+    updateTodayCount();
+    restoreMode();
+    try {
+      ortSession = await ort.InferenceSession.create('./dna_concentration.onnx');
+      console.log('Strip model ready');
+    } catch(e) { console.warn('Model load failed:', e); }
+  })();
+
+  function restoreMode() {
+    document.querySelectorAll('.mode-row .chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.value === selectedMode));
+    document.getElementById('modeLabelText').textContent =
+      T(selectedMode === 'membrane' ? 'mode_label_membrane' : 'mode_label_dna');
+    document.getElementById('modeBadge').textContent =
+      T(selectedMode === 'membrane' ? 'badge_membrane' : 'badge_strip');
+  }
+
+  function pickMode(el) {
+    selectedMode = el.dataset.value;
+    localStorage.setItem('cs_strip_mode', selectedMode);
+    restoreMode();
+    retake();
+  }
+
+  function updateTodayCount() {
+    const today = new Date().toDateString();
+    if (todayDate !== today) { todayCount = 0; todayDate = today; }
+    document.getElementById('todayCount').textContent = todayCount;
+  }
+  function bumpCount() {
+    const today = new Date().toDateString();
+    if (todayDate !== today) { todayCount = 0; todayDate = today; }
+    todayCount++;
+    localStorage.setItem('cs_strip_today', todayCount);
+    localStorage.setItem('cs_strip_today_date', todayDate);
+    document.getElementById('todayCount').textContent = todayCount;
+  }
+
+  // Image load
+  document.getElementById('imgInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    
+    // SHOW LOADING OVERLAY IMMEDIATELY
+    document.getElementById('analyzeOverlay').classList.add('on');
+    
+    // Use createObjectURL instead of FileReader to prevent mobile Safari memory crash
+    if (currentImgUrl && currentImgUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImgUrl);
+    }
+    currentImgUrl = URL.createObjectURL(file);
+    
+    const img = document.getElementById('previewImg');
+    img.src = currentImgUrl;
+    img.style.display = 'block';
+    document.getElementById('idleHint').style.display = 'none';
+    
+    img.onload = () => {
+      // Wait 200ms to guarantee mobile browsers repaint the screen before freezing the main thread
+      setTimeout(() => {
+        if (selectedMode === 'membrane') {
+          document.getElementById('analyzeOverlay').classList.remove('on');
+          enableMembraneTap();
+        } else {
+          autoAnalyze(img);
+        }
+      }, 200);
+    };
+    
+    this.value = '';
+  });
+
+  // Auto-analyze: split image into 3 equal horizontal thirds
+  async function autoAnalyze(imgEl) {
+    if (!ortSession) { alert('Engine still loading, try again in a moment.'); return; }
+    
+    try {
+      const W = imgEl.naturalWidth, H = imgEl.naturalHeight;
+      const z = Math.floor(H / 3);
+
+      const f_band  = stats(imgEl, { x1:0, y1:H-z,  x2:W, y2:H   }); // bottom = result
+      const f_bg    = stats(imgEl, { x1:0, y1:z,    x2:W, y2:H-z  }); // middle = bg
+      const f_upper = stats(imgEl, { x1:0, y1:0,    x2:W, y2:z    }); // top    = ctrl
+
+      let all = {};
+      [['band',f_band],['bg',f_bg],['upper',f_upper]].forEach(([p,d])=>{
+        for(let k in d) all[`${p}_${k}`]=d[k];
+      });
+      ['R_mean','G_mean','B_mean','H_mean','S_mean','V_mean','L_mean','a_mean','b_mean','gray_mean'].forEach(m=>{
+        all[`delta_${m}`]=f_band[m]-f_bg[m];
+        all[`band_minus_upper_${m}`]=f_band[m]-f_upper[m];
+      });
+
+      const order=['band_R_mean','band_G_mean','band_B_mean','band_R_std','band_G_std','band_B_std','band_H_mean','band_S_mean','band_V_mean','band_H_std','band_S_std','band_V_std','band_L_mean','band_a_mean','band_b_mean','band_L_std','band_a_std','band_b_std','band_gray_mean','band_gray_std','band_R_over_G','band_B_over_G','band_R_over_B','bg_R_mean','bg_G_mean','bg_B_mean','bg_R_std','bg_G_std','bg_B_std','bg_H_mean','bg_S_mean','bg_V_mean','bg_H_std','bg_S_std','bg_V_std','bg_L_mean','bg_a_mean','bg_b_mean','bg_L_std','bg_a_std','bg_b_std','bg_gray_mean','bg_gray_std','bg_R_over_G','bg_B_over_G','bg_R_over_B','upper_R_mean','upper_G_mean','upper_B_mean','upper_R_std','upper_R_std','upper_B_std','upper_H_mean','upper_S_mean','upper_V_mean','upper_H_std','upper_S_std','upper_V_std','upper_L_mean','upper_a_mean','upper_b_mean','upper_L_std','upper_a_std','upper_b_std','upper_gray_mean','upper_gray_std','upper_R_over_G','upper_B_over_G','upper_R_over_B','delta_R_mean','band_minus_upper_R_mean','delta_G_mean','band_minus_upper_G_mean','delta_B_mean','band_minus_upper_B_mean','delta_H_mean','band_minus_upper_H_mean','delta_S_mean','band_minus_upper_S_mean','delta_V_mean','band_minus_upper_V_mean','delta_L_mean','band_minus_upper_L_mean','delta_a_mean','band_minus_upper_a_mean','delta_b_mean','band_minus_upper_b_mean','delta_gray_mean','band_minus_upper_gray_mean'];
+
+      const inp = new Float32Array(92);
+      order.forEach((n,i)=>{inp[i]=all[n]||0;});
+      const res = await ortSession.run({[ortSession.inputNames[0]]:new ort.Tensor('float32',inp,[1,92])});
+      const conc = parseFloat(res[ortSession.outputNames[0]].data[0]).toFixed(2);
+
+      showResult(conc, f_band, f_bg, f_upper);
+    } catch(e) {
+      console.error(e);
+      alert('Analysis error: ' + e.message);
+    } finally {
+      document.getElementById('analyzeOverlay').classList.remove('on');
+    }
+  }
+
+  function stats(imgEl, roi) {
+    const c = document.createElement('canvas');
+    const w = Math.max(1,Math.floor(roi.x2-roi.x1)), h = Math.max(1,Math.floor(roi.y2-roi.y1));
+    c.width=w; c.height=h;
+    const ctx=c.getContext('2d');
+    ctx.drawImage(imgEl,roi.x1,roi.y1,w,h,0,0,w,h);
+    const d=ctx.getImageData(0,0,w,h).data;
+    let R=[],G=[],B=[],H=[],S=[],V=[],L=[],al=[],bl=[],gr=[],rog=0,bog=0,rob=0;
+    for(let i=0;i<d.length;i+=4){
+      let r=d[i],g=d[i+1],b=d[i+2];
+      R.push(r);G.push(g);B.push(b);
+      gr.push(.299*r+.587*g+.114*b);
+      rog+=r/(g||1);bog+=b/(g||1);rob+=r/(b||1);
+      let rn=r/255,gn=g/255,bn=b/255,mx=Math.max(rn,gn,bn),mn=Math.min(rn,gn,bn),d2=mx-mn;
+      let hv=0,sv=mx?d2/mx:0,vv=mx;
+      if(mx!==mn){switch(mx){case rn:hv=(gn-bn)/d2+(gn<bn?6:0);break;case gn:hv=(bn-rn)/d2+2;break;default:hv=(rn-gn)/d2+4;}hv/=6;}
+      H.push(hv*180);S.push(sv*255);V.push(vv*255);
+      let X=rn*.4124564+gn*.3575761+bn*.1804375,Y=rn*.2126729+gn*.7151522+bn*.0721750,Z=rn*.0193339+gn*.1191920+bn*.9503041;
+      X/=.95047;Y/=1;Z/=1.08883;
+      let fx=X>.008856?Math.cbrt(X):7.787*X+16/116,fy=Y>.008856?Math.cbrt(Y):7.787*Y+16/116,fz=Z>.008856?Math.cbrt(Z):7.787*Z+16/116;
+      L.push(116*fy-16);al.push(500*(fx-fy));bl.push(200*(fy-fz));
+    }
+    const m=a=>a.reduce((p,c)=>p+c,0)/a.length;
+    const s=(a,mv)=>Math.sqrt(a.reduce((p,c)=>p+Math.pow(c-mv,2),0)/a.length);
+    return{R_mean:m(R),G_mean:m(G),B_mean:m(B),R_std:s(R,m(R)),G_std:s(G,m(G)),B_std:s(B,m(B)),H_mean:m(H),S_mean:m(S),V_mean:m(V),H_std:s(H,m(H)),S_std:s(S,m(S)),V_std:s(V,m(V)),L_mean:m(L),a_mean:m(al),b_mean:m(bl),L_std:s(L,m(L)),a_std:s(al,m(al)),b_std:s(bl,m(bl)),gray_mean:m(gr),gray_std:s(gr,m(gr)),R_over_G:rog/R.length,B_over_G:bog/R.length,R_over_B:rob/R.length};
+  }
+
+  function setSwatch(swId, rgbId, f) {
+    const r=Math.round(f.R_mean),g=Math.round(f.G_mean),b=Math.round(f.B_mean);
+    document.getElementById(swId).style.background=`rgb(${r},${g},${b})`;
+    document.getElementById(rgbId).textContent=`${r} · ${g} · ${b}`;
+  }
+
+  // ============================================================
+  //  MEMBRANE MODE — user taps the zone to sample its color
+  // ============================================================
+  let membraneTapHandler = null;
+
+  function enableMembraneTap() {
+    const img = document.getElementById('previewImg');
+    document.getElementById('tapHint').style.display = 'flex';
+    document.getElementById('tapMarker').style.display = 'none';
+    disableMembraneTap(); // clear any stale listener before attaching a fresh one
+    membraneTapHandler = (e) => onMembraneTap(e, img);
+    img.addEventListener('click', membraneTapHandler);
+  }
+
+  function disableMembraneTap() {
+    if (membraneTapHandler) {
+      document.getElementById('previewImg').removeEventListener('click', membraneTapHandler);
+      membraneTapHandler = null;
+    }
+    document.getElementById('tapHint').style.display = 'none';
+  }
+
+  // Maps a click/tap position to natural-pixel coordinates on an
+  // object-fit:contain image (accounts for letterboxing on the short axis).
+  function getNaturalCoords(e, imgEl) {
+    const rect = imgEl.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const scale = Math.min(rect.width / imgEl.naturalWidth, rect.height / imgEl.naturalHeight);
+    const dispW = imgEl.naturalWidth * scale, dispH = imgEl.naturalHeight * scale;
+    const offX = (rect.width - dispW) / 2, offY = (rect.height - dispH) / 2;
+
+    const natX = (clickX - offX) / scale, natY = (clickY - offY) / scale;
+    if (natX < 0 || natY < 0 || natX > imgEl.naturalWidth || natY > imgEl.naturalHeight) {
+      return null; // tapped the letterbox padding, not the image itself
+    }
+    return { x: natX, y: natY, clickX, clickY };
+  }
+
+  function sampleColorAt(imgEl, natX, natY, boxSize = 24) {
+    const half = boxSize / 2;
+    const x1 = Math.max(0, Math.round(natX - half)), y1 = Math.max(0, Math.round(natY - half));
+    const x2 = Math.min(imgEl.naturalWidth, Math.round(natX + half)), y2 = Math.min(imgEl.naturalHeight, Math.round(natY + half));
+    const w = Math.max(1, x2 - x1), h = Math.max(1, y2 - y1);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(imgEl, x1, y1, w, h, 0, 0, w, h);
+    const d = c.getContext('2d').getImageData(0, 0, w, h).data;
+    let r=0,g=0,b=0,n=0;
+    for (let i=0; i<d.length; i+=4) { r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
+    return { r: Math.round(r/n), g: Math.round(g/n), b: Math.round(b/n) };
+  }
+
+  function rgbToHsv(r, g, b) {
+    r/=255; g/=255; b/=255;
+    const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
+    let h=0;
+    if (d !== 0) {
+      if (mx===r) h = ((g-b)/d) % 6;
+      else if (mx===g) h = (b-r)/d + 2;
+      else h = (r-g)/d + 4;
+      h *= 60; if (h<0) h += 360;
+    }
+    return { h, s: mx===0 ? 0 : (d/mx)*100, v: mx*100 };
+  }
+
+  // NOTE: these hue/saturation/value thresholds are a heuristic, tuned against
+  // real samples as they come in. Confirmed: RGB(78,68,114) / H≈253° == Negative.
+  // Blue ~195-248°, purple ~248-322°. Send more reference readings to refine further.
+  function classifyMembrane(hsv) {
+    const { h, s, v } = hsv;
+    if (s < 12 || v > 88) {
+      return { labelKey: 'lbl_inconclusive', pill: 'unknown', reasonKey: 'reason_no_color' };
+    }
+    if (h >= 195 && h <= 248) {
+      return { labelKey: 'lbl_positive', pill: 'positive', reasonKey: 'reason_dark_blue' };
+    }
+    if (h > 248 && h <= 322) {
+      return { labelKey: 'lbl_negative', pill: 'negative', reasonKey: 'reason_dark_purple' };
+    }
+    return { labelKey: 'lbl_inconclusive', pill: 'unknown', reasonKey: 'reason_not_blue_purple' };
+  }
+
+  function onMembraneTap(e, imgEl) {
+    const coords = getNaturalCoords(e, imgEl);
+    if (!coords) return; // tapped outside the image itself — keep waiting
+
+    disableMembraneTap();
+
+    const marker = document.getElementById('tapMarker');
+    marker.style.left = coords.clickX + 'px';
+    marker.style.top = coords.clickY + 'px';
+    marker.style.display = 'block';
+
+    const rgb = sampleColorAt(imgEl, coords.x, coords.y);
+    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    const result = classifyMembrane(hsv);
+
+    showMembraneResult(rgb, hsv, result);
+  }
+
+  function showMembraneResult(rgb, hsv, result) {
+    const label = T(result.labelKey);
+    const reason = T(result.reasonKey);
+
+    document.getElementById('resultLabelText').textContent = T('membrane_result_title');
+    document.getElementById('resultSub').textContent = reason;
+
+    const pill = document.getElementById('statusPill');
+    pill.className = 'status-pill ' + result.pill;
+    pill.textContent = label;
+
+    document.getElementById('mResultLabel').textContent = label;
+    document.getElementById('swatchMembrane').style.background = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+    document.getElementById('rgbMembrane').textContent = `${rgb.r} · ${rgb.g} · ${rgb.b}`;
+    document.getElementById('mHue').textContent = Math.round(hsv.h) + '°';
+    document.getElementById('mSat').textContent = Math.round(hsv.s) + '%';
+    document.getElementById('mVal').textContent = Math.round(hsv.v) + '%';
+    document.getElementById('mTime').textContent =
+      new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+    document.getElementById('stripResultBlock').style.display = 'none';
+    document.getElementById('membraneResultBlock').style.display = 'block';
+
+    if (currentImgUrl) {
+      const t = document.getElementById('resultThumb');
+      t.src = currentImgUrl; t.style.display = 'block';
+    }
+
+    document.getElementById('resultSheet').classList.add('open');
+    autoSaveMembrane({ label, pill: result.pill }, rgb);
+    bumpCount();
+  }
+
+  function autoSaveMembrane(result, rgb) {
+    const record = {
+      filename: Date.now() + '_membrane.jpg',
+      date: new Date().toISOString(),
+      conc: 0,
+      mode: 'membrane',
+      result: result.label,
+      color: `rgb(${rgb.r},${rgb.g},${rgb.b})`,
+      imgBase64: ""
+    };
+    const req = indexedDB.open('ChromaSnapLocalDB', 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('Strip'))
+        db.createObjectStore('Strip', { autoIncrement: true });
+    };
+    req.onsuccess = e => {
+      e.target.result.transaction('Strip','readwrite').objectStore('Strip').add(record);
+    };
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function showResult(conc, fb, fg, fu) {
+    document.getElementById('resultLabelText').textContent = T('strip_result_title');
+    document.getElementById('resultSub').textContent = T('sub_dna_analysis');
+    const pill = document.getElementById('statusPill');
+    pill.className = 'status-pill';
+    pill.textContent = T('status_complete');
+    document.getElementById('stripResultBlock').style.display = 'block';
+    document.getElementById('membraneResultBlock').style.display = 'none';
+
+    document.getElementById('rConc').textContent = conc;
+    document.getElementById('rTime').textContent =
+      new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('mBandR').textContent = Math.round(fb.R_mean);
+    document.getElementById('mBandG').textContent = Math.round(fb.G_mean);
+
+    setSwatch('swatchResult','rgbResult',fb);
+    setSwatch('swatchBg',   'rgbBg',    fg);
+    setSwatch('swatchCtrl', 'rgbCtrl',  fu);
+
+    if(currentImgUrl){
+      const t=document.getElementById('resultThumb');
+      t.src=currentImgUrl; t.style.display='block';
+    }
+
+    document.getElementById('resultSheet').classList.add('open');
+    autoSave(conc);
+    bumpCount();
+  }
+
+  function autoSave(conc) {
+    const record={
+      filename:Date.now()+'_strip.jpg',
+      date:new Date().toISOString(),
+      conc:parseFloat(conc)||0,
+      // We don't save the full image base64 anymore to save space, just a placeholder or small thumb
+      imgBase64: "" 
+    };
+    const req=indexedDB.open('ChromaSnapLocalDB',1);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('Strip'))
+        db.createObjectStore('Strip',{autoIncrement:true});
+    };
+    req.onsuccess=e=>{
+      e.target.result.transaction('Strip','readwrite').objectStore('Strip').add(record);
+    };
+    const t=document.getElementById('toast');
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+  }
+
+  function undoSave(){
+    clearTimeout(toastTimer);
+    document.getElementById('toast').classList.remove('show');
+    todayCount=Math.max(0,todayCount-1);
+    document.getElementById('todayCount').textContent=todayCount;
+    localStorage.setItem('cs_strip_today',todayCount);
+  }
+
+  function saveAndClose(){
+    document.getElementById('resultSheet').classList.remove('open');
+  }
+  function retake(){
+    document.getElementById('resultSheet').classList.remove('open');
+    document.getElementById('previewImg').style.display='none';
+    document.getElementById('idleHint').style.display='flex';
+    document.getElementById('resultThumb').style.display='none';
+    disableMembraneTap();
+    document.getElementById('tapMarker').style.display='none';
+    currentImgUrl=null;
+  }
+  function handleBgClick(e){
+    if(e.target===document.getElementById('resultSheet'))
+      document.getElementById('resultSheet').classList.remove('open');
+  }
+
+  // Swipe down to close
+  let sy=0;
+  document.getElementById('sheetBody').addEventListener('touchstart',e=>{sy=e.touches[0].clientY;},{passive:true});
+  document.getElementById('sheetBody').addEventListener('touchend',e=>{
+    if(e.changedTouches[0].clientY-sy>70) document.getElementById('resultSheet').classList.remove('open');
+  },{passive:true});
+  </script>
+</body>
+</html>
