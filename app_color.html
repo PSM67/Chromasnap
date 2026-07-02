@@ -916,7 +916,13 @@ ctx.drawImage(img, padX, padY, nw, nh);
         }
       }
 
-      if (!box) { showResult({ type: 'unknown', conc: null, avgColor: getAvgColor(img) }); return; }
+      // ด่าน 1: confidence ต้องเกิน 0.3 — ตัดหน้าคน/พื้นหลังออก
+// ด่าน 2: box ต้องใหญ่พอ (≥1% ของ frame) — ตัด noise pixel เล็กๆ ออก
+if (!box || best < 0.3 || box.w * box.h < 640*640*0.01) {
+  showResult({ type: 'unknown', conc: null, avgColor: getAvgColor(img) });
+  return;
+}
+
       if (box.cls === 'negative') { showResult({ type: 'negative', conc: null, avgColor: getAvgColor(img) }); return; }
 
     // Convert YOLO box from letterboxed 640×640 space back to original image coords
