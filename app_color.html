@@ -881,11 +881,19 @@
         return;
       }
 
-      // YOLO preprocess 640×640
-      const c = document.createElement('canvas');
-      c.width = c.height = 640;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(img, 0, 0, 640, 640);
+      // YOLO preprocess 640×640 with letterboxing (preserve aspect ratio)
+const c = document.createElement('canvas');
+c.width = c.height = 640;
+const ctx = c.getContext('2d');
+ctx.fillStyle = '#808080';
+ctx.fillRect(0, 0, 640, 640);
+const scale = Math.min(640 / img.naturalWidth, 640 / img.naturalHeight);
+const nw = Math.round(img.naturalWidth * scale);
+const nh = Math.round(img.naturalHeight * scale);
+const padX = (640 - nw) / 2;
+const padY = (640 - nh) / 2;
+ctx.drawImage(img, padX, padY, nw, nh);
+
       const d = ctx.getImageData(0, 0, 640, 640).data;
       const f = new Float32Array(3 * 640 * 640);
       for (let i = 0; i < 640*640; i++) {
@@ -901,7 +909,7 @@
       let best = 0, box = null;
       for (let i = 0; i < N; i++) {
         const conf = Math.max(o[4*N+i]||0, o[5*N+i]||0);
-        if (conf > best && conf > 0.01) {
+        if (conf > best) {
           best = conf;
           box = { cx:o[0*N+i], cy:o[1*N+i], w:o[2*N+i], h:o[3*N+i],
                   cls: (o[5*N+i]||0) > (o[4*N+i]||0) ? 'positive' : 'negative' };
@@ -911,12 +919,16 @@
       if (!box) { showResult({ type: 'unknown', conc: null, avgColor: getAvgColor(img) }); return; }
       if (box.cls === 'negative') { showResult({ type: 'negative', conc: null, avgColor: getAvgColor(img) }); return; }
 
-      // Crop → XGB
-      const sx=img.naturalWidth/640, sy=img.naturalHeight/640;
-      const cc = document.createElement('canvas');
-      const cw=box.w*sx, ch=box.h*sy;
-      cc.width=Math.max(1,cw); cc.height=Math.max(1,ch);
-      cc.getContext('2d').drawImage(img,(box.cx-box.w/2)*sx,(box.cy-box.h/2)*sy,cw,ch,0,0,cw,ch);
+    // Convert YOLO box from letterboxed 640×640 space back to original image coords
+const ox = (box.cx - padX) / scale;
+const oy = (box.cy - padY) / scale;
+const ow = box.w / scale;
+const oh = box.h / scale;
+const cc = document.createElement('canvas');
+cc.width = Math.max(1, ow);
+cc.height = Math.max(1, oh);
+cc.getContext('2d').drawImage(img, ox - ow/2, oy - oh/2, ow, oh, 0, 0, ow, oh);
+
       const avgColor = getAvgColorFromCanvas(cc);
 
       const id = cc.getContext('2d').getImageData(0,0,cc.width,cc.height).data;
