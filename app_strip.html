@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>ChromaSnap — Strip</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Quicksand:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ===================================================
+       ChromaSnap Strip App — Same design as Color App
+       Warm oat tones, split layout, easy to read
+    =================================================== */
+    :root {
+      --bg:          #F5EFE6;
+      --bg-dark:     #1C1410;
+      --surface:     #FDFAF5;
+      --surface-2:   #EDE6DA;
+      --wood:        #8B6245;
+      --wood-deep:   #4A3322;
+      --amber:       #C9924F;
+      --amber-soft:  rgba(201,146,79,0.14);
+      --sakura:      #C09098;
+      --sakura-soft: rgba(192,144,152,0.14);
+      --matcha:      #7A9B82;
+      --positive:    #C95A72;
+      --negative:    #5A8A62;
+      --text:        #2E2118;
+      --text-2:      #7A6A5A;
+      --text-3:      #A99888;
+      --border:      rgba(139,98,69,0.12);
+      --safe-top:    env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%; height: 100dvh;
+      overflow: hidden;
+      background: var(--bg-dark);
+    }
+    body {
+      font-family: 'Quicksand', 'Sarabun', sans-serif;
+      display: flex;
+      flex-direction: column;
+      color: var(--text);
+    }
+
+    /* ============ VIEWFINDER ============ */
+    .viewfinder {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+      background: var(--bg-dark);
+      min-height: 0;
+    }
+    #previewImg {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: none;
+      background: #0A0806;
+    }
+    .vf-idle {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .vf-idle-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: rgba(192,144,152,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: rgba(192,144,152,0.7);
+      border: 1.5px solid rgba(192,144,152,0.22);
+    }
+    .vf-idle p {
+      color: rgba(245,239,230,0.45);
+      font-size: 0.82rem;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    /* Corner guides — taller for strip orientation */
+    .scan-frame {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .scan-frame::before, .scan-frame::after,
+    .scan-frame span::before, .scan-frame span::after {
+      content: '';
+      position: absolute;
+      width: 22px; height: 22px;
+      border-style: solid;
+      border-color: rgba(192,144,152,0.4);
+    }
+    .scan-frame::before  { top:56px; left:18px;  border-width: 1.5px 0 0 1.5px; }
+    .scan-frame::after   { top:56px; right:18px; border-width: 1.5px 1.5px 0 0; }
+    .scan-frame span::before { bottom:0; left:18px;  border-width: 0 0 1.5px 1.5px; }
+    .scan-frame span::after  { bottom:0; right:18px; border-width: 0 1.5px 1.5px 0; }
+
+    /* Top bar */
+    .top-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(var(--safe-top) + 8px) 18px 10px;
+      background: linear-gradient(to bottom, rgba(28,20,16,0.8) 0%, transparent 100%);
+    }
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Shippori Mincho', serif;
+      font-size: 0.95rem;
+      color: rgba(245,239,230,0.88);
+      letter-spacing: 0.06em;
+    }
+    /* Strip accent dot = sakura pink instead of amber */
+    .brand-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--sakura);
+      opacity: 0.9;
+    }
+    .badge {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--sakura);
+      border: 1px solid rgba(192,144,152,0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .top-icons { display: flex; gap: 8px; }
+    .top-icon {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: rgba(245,239,230,0.08);
+      border: 1px solid rgba(245,239,230,0.1);
+      color: rgba(245,239,230,0.7);
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .top-icon:active { background: rgba(245,239,230,0.16); }
+
+    /* Analyzing overlay */
+    .overlay-analyze {
+      position: absolute;
+      inset: 0;
+      background: rgba(28,20,16,0.72);
+      backdrop-filter: blur(2px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 30;
+    }
+    .overlay-analyze.on { display: flex; }
+    .spin-ring {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(192,144,152,0.18);
+      border-top-color: var(--sakura);
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .overlay-analyze p {
+      font-size: 0.8rem;
+      color: rgba(245,239,230,0.7);
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+
+    /* ============ BOTTOM PANEL ============ */
+    .bottom-panel {
+      background: var(--bg);
+      padding: 18px 22px calc(var(--safe-bottom) + 18px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .row-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      text-transform: uppercase;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+
+    /* Mode row — Strip / Membrane selector */
+    .mode-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      row-gap: 6px;
+    }
+    .chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.18s;
+      letter-spacing: 0.02em;
+    }
+    .chip.active {
+      background: var(--wood-deep);
+      border-color: var(--wood-deep);
+      color: rgba(245,239,230,0.95);
+    }
+    .chip:active { opacity: 0.75; }
+
+    /* Info row (replaces pathogen chips — strip has no pathogen select) */
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mode-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mode-label i { color: var(--sakura); font-size: 0.75rem; }
+    .today-count {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .today-count span {
+      color: var(--sakura);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* Capture row — identical to Color app */
+    .capture-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+    }
+    .side-btn {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1.5px solid var(--border);
+      color: var(--text-2);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.18s;
+    }
+    .side-btn:active { background: var(--surface); transform: scale(0.94); }
+
+    /* Capture btn — sakura tinted ring */
+    .capture-btn {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      background: var(--wood-deep);
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow:
+        0 4px 18px rgba(46,33,24,0.28),
+        0 1px 0 rgba(245,230,200,0.15) inset;
+      transition: transform 0.14s, box-shadow 0.14s;
+    }
+    .capture-btn:active {
+      transform: scale(0.91);
+      box-shadow: 0 2px 8px rgba(46,33,24,0.2);
+    }
+    .capture-btn i { font-size: 1.5rem; color: rgba(245,230,200,0.9); }
+    #imgInput { display: none; }
+
+    /* ============ RESULT SHEET — same structure as Color ============ */
+    .result-sheet {
+      position: fixed;
+      inset: 0;
+      background: rgba(46,33,24,0.3);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .result-sheet.open { opacity: 1; pointer-events: auto; }
+    .sheet-body {
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      padding: 0 22px calc(var(--safe-bottom) + 22px);
+      width: 100%;
+      max-height: 92dvh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .result-sheet.open .sheet-body { transform: translateY(0); }
+
+    .handle {
+      width: 36px; height: 4px;
+      background: var(--surface-2);
+      border-radius: 2px;
+      margin: 14px auto 22px;
+    }
+
+    /* Headline */
+    .result-headline {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-label {
+      font-family: 'Shippori Mincho', serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    .result-sub {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+    .status-pill {
+      padding: 7px 16px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: var(--sakura-soft);
+      color: var(--sakura);
+      white-space: nowrap;
+    }
+    .status-pill.positive { background: rgba(201,90,114,0.1); color: var(--positive); }
+    .status-pill.negative { background: rgba(90,138,98,0.1);  color: var(--negative); }
+    .status-pill.unknown  { background: var(--amber-soft);    color: var(--amber);    }
+
+    /* Membrane tap-to-sample */
+    .tap-hint {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      pointer-events: none;
+      background: rgba(10,8,6,0.28);
+    }
+    .tap-hint-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: rgba(192,144,152,0.16);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.9rem;
+      color: rgba(245,239,230,0.92);
+      border: 1.5px solid rgba(245,239,230,0.35);
+      animation: tapPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes tapPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.08); opacity: 0.8; }
+    }
+    .tap-hint p {
+      color: rgba(245,239,230,0.92);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding: 0 30px;
+    }
+    .tap-marker {
+      position: absolute;
+      width: 34px; height: 34px;
+      border: 2.5px solid rgba(245,239,230,0.95);
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.35), 0 2px 10px rgba(0,0,0,0.4);
+      transform: translate(-50%, -50%);
+      display: none;
+      pointer-events: none;
+    }
+
+    /* Concentration highlight — big number like Color app */
+    .conc-highlight {
+      background: var(--surface-2);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .conc-num {
+      font-family: 'Shippori Mincho', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .conc-unit {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+    .conc-lbl {
+      margin-left: auto;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    /* 3 zone swatches — horizontal same style as color swatch row */
+    .zones-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .zone-card {
+      flex: 1;
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .zone-card .z-lbl {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+    .zone-swatch {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      margin: 0 auto 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .zone-rgb {
+      font-size: 0.58rem;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+
+    /* Metrics grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .metric-card {
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .mc-lbl {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 5px;
+    }
+    .mc-val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    /* Result thumb */
+    .result-thumb {
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      display: none;
+      background: var(--surface-2);
+    }
+
+    /* Actions */
+    .sheet-actions { display: flex; gap: 10px; }
+    .s-btn {
+      flex: 1;
+      height: 48px;
+      border-radius: 14px;
+      border: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: 'Quicksand', sans-serif;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all 0.18s;
+    }
+    .s-btn.primary {
+      background: var(--wood-deep);
+      color: rgba(245,230,200,0.95);
+      box-shadow: 0 3px 12px rgba(46,33,24,0.2);
+    }
+    .s-btn.ghost {
+      background: var(--surface-2);
+      color: var(--text-2);
+    }
+    .s-btn:active { opacity: 0.78; transform: scale(0.97); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 16px);
+      left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: var(--wood-deep);
+      color: rgba(245,230,200,0.92);
+      padding: 11px 20px;
+      border-radius: 30px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex; align-items: center; gap: 9px;
+      z-index: 200;
+      transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
+      white-space: nowrap;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast-undo { color: var(--sakura); cursor: pointer; font-weight: 700; margin-left: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- VIEWFINDER -->
+  <div class="viewfinder">
+    <img id="previewImg" alt="Test Strip">
+
+    <div class="vf-idle" id="idleHint">
+      <div class="vf-idle-icon"><i class="fa-solid fa-barcode"></i></div>
+      <p data-i18n-html="idle_hint_strip">Capture test strip<br>analyzed automatically</p>
+    </div>
+
+    <div class="scan-frame"><span></span></div>
+
+    <div class="tap-hint" id="tapHint">
+      <div class="tap-hint-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+      <p data-i18n-html="tap_hint_membrane">Tap the colored zone<br>you want to test</p>
+    </div>
+    <div class="tap-marker" id="tapMarker"></div>
+
+    <div class="top-bar">
+      <div class="app-brand">
+        <div class="brand-dot"></div>
+        ChromaSnap
+        <span class="badge" id="modeBadge">STRIP</span>
+      </div>
+      <div class="top-icons">
+        <a href="homepage.html" class="top-icon" title="Back"><i class="fa-solid fa-house"></i></a>
+        <a href="history.html" class="top-icon"><i class="fa-solid fa-clock-rotate-left"></i></a>
+      </div>
+    </div>
+
+    <div class="overlay-analyze" id="analyzeOverlay">
+      <div class="spin-ring"></div>
+      <p data-i18n="processing">Processing...</p>
+    </div>
+  </div>
+
+  <!-- BOTTOM PANEL -->
+  <div class="bottom-panel">
+    <div class="mode-row">
+      <span class="row-label" data-i18n="row_label_mode">Mode</span>
+      <div class="chip active" data-value="strip" onclick="pickMode(this)" data-i18n="chip_strip">Strip</div>
+      <div class="chip" data-value="membrane" onclick="pickMode(this)" data-i18n="chip_membrane">Membrane</div>
+    </div>
+
+    <div class="info-row">
+      <div class="mode-label">
+        <i class="fa-solid fa-dna"></i>
+        <span id="modeLabelText">DNA Concentration Test</span>
+      </div>
+      <div class="today-count">
+        <i class="fa-solid fa-barcode" style="font-size:0.7rem;"></i>
+        <span id="todayCount">0</span> <span data-i18n="today_suffix">today</span>
+      </div>
+    </div>
+
+    <div class="capture-row">
+      <label for="imgInput" class="side-btn" title="Gallery">
+        <i class="fa-solid fa-images"></i>
+      </label>
+      <button class="capture-btn" onclick="document.getElementById('imgInput').click()">
+        <i class="fa-solid fa-camera"></i>
+      </button>
+      <div class="side-btn" style="visibility:hidden;"></div>
+    </div>
+  </div>
+
+  <input type="file" id="imgInput" accept="image/*" capture="environment">
+
+  <!-- RESULT SHEET -->
+  <div class="result-sheet" id="resultSheet" onclick="handleBgClick(event)">
+    <div class="sheet-body" id="sheetBody">
+      <div class="handle"></div>
+
+      <div class="result-headline">
+        <div>
+          <div class="result-label" id="resultLabelText">Strip Result</div>
+          <div class="result-sub" id="resultSub">DNA concentration analysis</div>
+        </div>
+        <div class="status-pill" id="statusPill">Complete</div>
+      </div>
+
+      <!-- STRIP MODE RESULT -->
+      <div id="stripResultBlock">
+        <!-- Big concentration number -->
+        <div class="conc-highlight">
+          <div class="conc-num" id="rConc">—</div>
+          <div class="conc-unit">ng / μL</div>
+          <div class="conc-lbl" data-i18n="lbl_concentration">Concentration</div>
+        </div>
+
+        <!-- 3 zone swatches -->
+        <div class="zones-row">
+          <div class="zone-card">
+            <div class="z-lbl" data-i18n="lbl_result_band">Result Band</div>
+            <div class="zone-swatch" id="swatchResult"></div>
+            <div class="zone-rgb" id="rgbResult">—</div>
+          </div>
+          <div class="zone-card">
+            <div class="z-lbl" data-i18n="lbl_background">Background</div>
+            <div class="zone-swatch" id="swatchBg"></div>
+            <div class="zone-rgb" id="rgbBg">—</div>
+          </div>
+          <div class="zone-card">
+            <div class="z-lbl" data-i18n="lbl_control_band">Control Band</div>
+            <div class="zone-swatch" id="swatchCtrl"></div>
+            <div class="zone-rgb" id="rgbCtrl">—</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_result_band_r">Result Band R</div>
+            <div class="mc-val" id="mBandR">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_result_band_g">Result Band G</div>
+            <div class="mc-val" id="mBandG">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="label_scanned">Scanned</div>
+            <div class="mc-val" id="rTime" style="font-size:0.85rem;">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_auto_zones">Auto-zones</div>
+            <div class="mc-val" style="font-size:0.85rem;" data-i18n="val_3_regions">3 regions</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMBRANE MODE RESULT -->
+      <div id="membraneResultBlock" style="display:none;">
+        <div class="conc-highlight">
+          <div class="conc-num" id="mResultLabel" style="font-size:1.9rem;">—</div>
+          <div class="conc-lbl" data-i18n="membrane_result_title">Membrane Result</div>
+        </div>
+
+        <div class="zones-row">
+          <div class="zone-card">
+            <div class="z-lbl" data-i18n="lbl_tapped_color">Tapped Color</div>
+            <div class="zone-swatch" id="swatchMembrane" style="width:48px;height:48px;"></div>
+            <div class="zone-rgb" id="rgbMembrane">—</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_hue">Hue</div>
+            <div class="mc-val" id="mHue">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_saturation">Saturation</div>
+            <div class="mc-val" id="mSat">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="lbl_brightness">Brightness</div>
+            <div class="mc-val" id="mVal">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="mc-lbl" data-i18n="label_scanned">Scanned</div>
+            <div class="mc-val" id="mTime" style="font-size:0.85rem;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <img class="result-thumb" id="resultThumb" alt="">
+
+      <div class="sheet-actions">
+        <button class="s-btn ghost" onclick="retake()">
+          <i class="fa-solid fa-rotate-left"></i> <span data-i18n="btn_retake">Retake</span>
+        </button>
+        <button class="s-btn primary" onclick="saveAndClose()">
+          <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <i class="fa-solid fa-circle-check" style="color:var(--matcha);"></i>
+    <span data-i18n="toast_saved">Saved</span>
+    <span class="toast-undo" onclick="undoSave()" data-i18n="toast_undo">Undo</span>
+  </div>
+
+  <script src="translations.js"></script>
+  <script>
+  // ============================================================
+  //  ChromaSnap Strip App — Auto-detected 3 zones (green marker +
+  //  peak detection), pure-JS XGBoost classifier + regressor.
+  //  NOTE: models below are "mock" — trained on a small augmented
+  //  dataset (see project history). Concentration numbers are
+  //  directional, not clinically validated.
+  // ============================================================
+  const currentLang = localStorage.getItem('cs_lang') || 'en';
+  function T(key) {
+    const dict = window.translations || {};
+    return (dict[currentLang] && dict[currentLang][key])
+        || (dict.en && dict.en[key])
+        || key;
+  }
+  function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.dataset.i18nHtml); });
+  }
+
+
+  // Embedded model weights (mock-grade, see project notes) — pure data,
+  // evaluated by the tree-walking code below. No ONNX / external model
+  // file needed for Strip DNA mode anymore.
+  const STRIP_REGRESSOR_MODEL = {"base_score":51.414288,"objective":"reg:squarederror","feature_names":["band_R_mean","band_G_mean","band_B_mean","band_R_std","band_G_std","band_B_std","band_H_mean","band_H_std","band_S_mean","band_S_std","band_V_mean","band_V_std","band_L_mean","band_L_std","band_a_mean","band_a_std","band_b_mean","band_b_std","band_gray_mean","band_gray_std","band_R_over_G","band_B_over_G","band_R_over_B","bg_R_mean","bg_G_mean","bg_B_mean","bg_R_std","bg_G_std","bg_B_std","bg_H_mean","bg_H_std","bg_S_mean","bg_S_std","bg_V_mean","bg_V_std","bg_L_mean","bg_L_std","bg_a_mean","bg_a_std","bg_b_mean","bg_b_std","bg_gray_mean","bg_gray_std","bg_R_over_G","bg_B_over_G","bg_R_over_B","upper_R_mean","upper_G_mean","upper_B_mean","upper_R_std","upper_G_std","upper_B_std","upper_H_mean","upper_H_std","upper_S_mean","upper_S_std","upper_V_mean","upper_V_std","upper_L_mean","upper_L_std","upper_a_mean","upper_a_std","upper_b_mean","upper_b_std","upper_gray_mean","upper_gray_std","upper_R_over_G","upper_B_over_G","upper_R_over_B","delta_R_mean","band_minus_upper_R_mean","delta_G_mean","band_minus_upper_G_mean","delta_B_mean","band_minus_upper_B_mean","delta_H_mean","band_minus_upper_H_mean","delta_S_mean","band_minus_upper_S_mean","delta_V_mean","band_minus_upper_V_mean","delta_L_mean","band_minus_upper_L_mean","delta_a_mean","band_minus_upper_a_mean","delta_b_mean","band_minus_upper_b_mean","delta_gray_mean","band_minus_upper_gray_mean","roi_upper_center","roi_band_center","roi_distance_upper_to_band","roi_auto_detected"],"trees":[{"l":[1,3,5,7,-1,9,-1,-1,-1,-1,-1],"r":[2,4,6,8,-1,10,-1,-1,-1,-1,-1],"si":[70,55,78,76,0,6,0,0,0,0,0],"sc":[-37.841557,5.309194,-10.526,-72.482666,4.735754,140.389557,-0.132976,-0.352398,2.511173,-1.826962,-0.096607],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,-1,-1,-1,-1,-1,-1,-1],"si":[70,26,70,3,49,5,0,0,0,0,0,0,0],"sc":[-37.841557,2.259545,-20.928223,2.523957,4.575566,4.499438,-1.848742,-0.151399,3.878079,0.789363,-0.49942,-0.135875,-1.216729],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,26,70,86,32,4,0,0,0,0,0,0,0,0,0],"sc":[-37.841557,2.259545,-24.199778,-6.256196,3.465927,4.902995,99.602669,3.78961,-0.149478,1.449555,-0.406755,-0.12609,-1.066807,-0.056363,-1.757832],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,-1,-1,-1,-1,-1,-1,-1],"si":[70,84,83,89,27,21,0,0,0,0,0,0,0],"sc":[-37.841557,-5.050187,1.779758,159.0,2.739232,1.072884,-0.105695,1.118505,-0.866297,3.685075,0.227782,-1.652563,-0.479236],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[72,28,6,76,49,37,1,0,0,0,0,0,0,0,0],"sc":[-36.974224,2.528621,136.508438,-147.159119,4.575566,-2.736144,124.711998,-0.196965,3.473552,0.71006,-0.538412,-0.062916,-1.598187,-0.076688,-0.467137],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,86,70,19,23,3,28,0,0,0,0,0,0,0,0],"sc":[-37.841557,-6.899006,-24.662222,2.781882,208.21489,5.409581,1.056823,-0.341342,2.830533,0.895417,-1.074369,-0.04624,-0.955935,-0.332503,-1.531818],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,27,70,84,49,3,0,0,0,0,0,0,0,0,0],"sc":[-37.841557,2.739232,-24.199778,-5.524831,4.478302,5.409581,99.602669,0.3528,3.225066,0.53473,-0.510633,-0.054983,-0.918468,-0.040617,-1.431784],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,26,21,50,74,53,89,0,0,0,0,0,0,0,0],"sc":[-45.647556,2.259545,1.072884,11.958733,-55.010666,55.675972,167.0,3.577392,0.402082,-0.097331,2.204681,-1.411067,-0.213163,0.911425,-0.428172],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,26,2,14,84,0,81,0,0,0,0,0,0,0,0],"sc":[-45.647556,2.259545,108.21022,-1.016882,-2.066514,85.630447,-27.773077,0.329303,3.212286,-0.52769,1.005371,1.17268,0.087353,-0.569945,-1.317786],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,28,21,76,7,83,50,0,0,0,0,0,0,0,0],"sc":[-45.226223,2.528621,1.072884,-98.833778,41.897781,1.44627,7.304458,0.4783,3.176297,0.524997,-0.22568,-1.271564,-0.187357,0.104181,-0.605064],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[72,34,72,13,84,5,4,0,0,0,0,0,0,0,0],"sc":[-36.974224,2.194889,-28.332001,2.360823,-3.751406,4.450258,3.268183,2.804656,-0.082113,-0.62205,1.078318,0.052942,-0.190384,-0.644848,-1.305717],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[82,55,5,46,68,69,84,0,0,0,0,0,0,0,0],"sc":[-14.102406,5.397283,4.985219,202.313782,0.985297,-69.598221,-3.618254,-0.408077,1.818621,0.333368,3.061408,0.017548,-0.777767,-1.273627,-0.452391],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,84,87,89,28,3,81,0,0,0,0,0,0,0,0],"sc":[-37.841557,-5.118064,-69.852448,240.0,2.528621,6.652256,-26.614063,0.9232,-1.053434,2.530938,0.272918,-0.248022,-1.081148,-0.176754,-1.194102],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,76,70,6,86,5,83,0,0,0,0,0,0,0,0],"sc":[-37.841557,-98.833778,-27.393778,2.735556,-6.256196,4.450258,1.44627,1.218728,-0.726479,2.3664,-0.129152,0.061889,-0.163722,-1.030546,-0.131093],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,89,84,89,51,4,70,0,0,0,0,0,0,0,0],"sc":[-37.841557,246.0,-4.447885,122.0,2.570751,3.268183,-20.928223,0.027333,2.748364,2.109501,-0.376953,-0.550543,-1.112978,-0.015732,-0.673926],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[72,13,79,27,0,32,5,0,0,0,0,0,0,0,0],"sc":[-36.974224,2.360823,-70.916664,2.739232,130.403778,5.448905,3.352536,2.085312,0.01478,0.07207,-1.123532,-0.044475,-0.640026,-0.478,-1.033496],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,84,71,0,28,3,86,0,0,0,0,0,0,0,0],"sc":[-45.226223,-5.050187,-74.132668,138.910217,2.528621,6.573629,-8.669704,-0.45866,1.017735,2.463852,0.200066,-0.100166,-0.826377,-0.494292,-1.029382],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,55,70,76,3,1,5,0,0,0,0,0,0,0,0],"sc":[-45.226223,5.397283,-24.199778,-98.833778,6.672954,79.903114,5.405295,-0.742157,1.083874,2.491539,-0.61669,1.058202,-0.195536,-0.579993,-0.978193],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,-1,11,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,-1,12,-1,-1,-1,-1,-1,-1],"si":[70,84,81,0,4,0,77,0,0,0,0,0,0],"sc":[-49.377335,-5.524831,-37.089134,84.935112,2.497727,1.411044,-8.286889,-0.042087,-0.933194,-0.894293,1.80745,-0.851229,-0.307342],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,4,1,0,3,0,84,0,0,0,0,0,0,0,0],"sc":[-45.647556,3.475519,91.197334,125.118446,6.672954,85.630447,-5.207766,-0.498321,0.813017,2.054853,-0.61508,0.911873,0.059113,-0.935633,-0.44497],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,13,1,4,1,1,71,0,0,0,0,0,0,0,0],"sc":[-45.226223,2.360823,91.197334,2.984267,120.819336,79.903114,-70.422668,-0.608772,1.958353,-0.075662,-0.925413,0.889076,0.058128,-0.410076,-0.852823],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,28,89,14,63,37,71,0,0,0,0,0,0,0,0],"sc":[-37.841557,2.528621,232.0,-1.016882,1.542511,-2.177609,-70.422668,0.029892,1.813652,0.038104,-0.465235,-0.046897,-0.8848,-0.099377,-0.638357],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,76,70,1,2,3,91,0,0,0,0,0,0,0,0],"sc":[-37.841557,-98.833778,-27.393778,134.066895,127.685776,5.409581,1178.0,-0.646144,0.862945,1.568454,0.210971,0.091608,-0.196409,-0.701211,-0.044022],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[88,55,77,76,1,90,70,0,0,0,0,0,0,0,0],"sc":[-31.263334,6.087697,-3.284667,-83.759331,145.719772,1405.0,-24.662222,-0.706154,0.79078,2.057584,0.009684,-0.781978,-0.384456,0.072832,-0.268135],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,55,1,78,0,11,54,0,0,0,0,0,0,0,0],"sc":[-45.226223,6.087697,127.945335,-16.909334,90.588219,4.994563,34.468887,-1.005118,0.7975,-0.105053,1.896047,0.019384,-0.588777,-0.792541,-0.374178],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,34,81,32,6,0,5,0,0,0,0,0,0,0,0],"sc":[-45.647556,2.194889,-35.642174,5.609242,119.215332,85.630447,5.111247,-0.334029,1.723075,-0.443898,1.160014,0.896047,0.093839,-0.251482,-0.692019],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,89,89,89,49,37,81,0,0,0,0,0,0,0,0],"sc":[-37.841557,246.0,232.0,122.0,2.723405,-2.177609,-25.372286,-0.0,1.852733,1.440287,-0.50176,-0.0,-0.724674,-0.033798,-0.478549],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,76,1,23,5,31,83,0,0,0,0,0,0,0,0],"sc":[-45.647556,-116.857559,127.945335,210.109116,3.239687,23.322445,0.979692,-0.128733,-0.863905,-0.791768,1.386281,-0.043042,-0.546399,-0.6118,-0.124234],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,-1,3,5,7,-1,-1,-1,-1],"r":[2,-1,4,6,8,-1,-1,-1,-1],"si":[51,0,81,55,86,0,0,0,0],"sc":[2.691258,1.733076,-30.468849,5.397283,-7.632924,-0.292778,0.958172,-0.234286,-0.63096],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,74,1,59,8,3,81,0,0,0,0,0,0,0,0],"sc":[-45.226223,-54.999779,91.197334,0.68628,4.542222,2.993057,-23.124258,1.467503,-0.423043,-0.652748,1.684321,0.834982,0.125191,-0.315192,-0.62988],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[51,3,91,0,0,46,3,0,0,0,0],"sc":[2.691258,2.523957,1217.0,-0.795857,1.706052,208.816452,4.251388,-0.393505,0.557925,1.416041,-0.051034],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,-1,3,5,7,-1,-1,-1,-1],"r":[2,-1,4,6,8,-1,-1,-1,-1],"si":[51,0,71,55,3,0,0,0,0],"sc":[2.691258,1.581668,-85.00222,5.654464,5.948701,-0.200971,1.336508,-0.229206,-0.629671],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,-1,11,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,-1,12,-1,-1,-1,-1,-1,-1],"si":[70,74,81,49,30,0,83,0,0,0,0,0,0],"sc":[-49.463554,-55.010666,-37.089134,2.723405,52.232178,0.994453,-1.990978,1.22921,-0.358602,1.636163,-0.392844,-0.56351,-0.238596],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,-1,7,-1,-1],"r":[2,4,6,-1,-1,-1,8,-1,-1],"si":[51,3,81,0,0,0,46,0,0],"sc":[2.691258,2.523957,-37.089134,-0.829441,1.518534,1.417282,208.816452,-0.343168,0.850553],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[72,89,83,13,72,86,18,0,0,0,0,0,0,0,0],"sc":[-36.974224,246.0,-1.630093,2.360823,-70.710442,-9.314761,131.376892,1.467344,-0.0,0.710216,-0.913548,-0.181312,-0.558922,0.077333,-0.291668],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[51,3,85,0,0,26,78,0,0,0,0],"sc":[2.691258,2.523957,-10.047179,-0.800391,1.414904,2.206123,-14.913555,1.217482,0.061463,-0.405311,0.128499],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,-1,7,-1,-1],"r":[2,4,6,-1,-1,-1,8,-1,-1],"si":[51,3,69,0,0,0,46,0,0],"sc":[2.691258,2.523957,-96.535332,-0.787051,1.363384,1.156488,208.816452,-0.301297,0.643951],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,-1,11,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,-1,12,-1,-1,-1,-1,-1,-1],"si":[70,89,81,4,82,0,8,0,0,0,0,0,0],"sc":[-49.377335,246.0,-37.089134,5.936849,-26.524035,0.825514,5.084445,1.299285,-0.108499,0.462286,-0.860927,-0.596663,-0.201654],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,89,69,89,82,11,54,0,0,0,0,0,0,0,0],"sc":[-28.674223,240.0,-63.818222,141.0,-26.524035,7.231925,34.07,0.215498,1.449083,0.546617,-0.578822,0.04053,-0.41699,-0.571109,-0.182145],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,-1,7,-1,-1],"r":[2,4,6,-1,-1,-1,8,-1,-1],"si":[51,3,81,0,0,0,46,0,0],"sc":[2.691258,2.523957,-37.089134,-0.749938,1.209327,1.156281,208.816452,-0.270139,0.581851],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,-1,7,-1,-1],"r":[2,4,6,-1,-1,-1,8,-1,-1],"si":[51,3,81,0,0,0,78,0,0],"sc":[2.691258,2.523957,-37.089134,-0.737439,1.193857,1.096907,-14.913555,-0.341253,0.240888],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,89,17,89,53,40,86,0,0,0,0,0,0,0,0],"sc":[-28.674223,246.0,0.872569,141.0,10.376798,1.136748,-9.314761,0.231705,1.37375,-0.389393,0.63385,0.071702,-0.259223,-0.107846,-0.423094],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,89,12,13,49,0,18,0,0,0,0,0,0,0,0],"sc":[-45.226223,246.0,38.868904,2.360823,2.723405,85.630447,131.376892,1.126546,-0.204667,0.748071,-0.334241,0.576378,0.127715,-0.074958,-0.343336],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[20,43,70,0,70,27,60,0,0,0,0,0,0,0,0],"sc":[1.033476,0.957434,-45.226223,114.098442,-48.073334,2.739232,6.291695,0.53893,0.10894,-0.852847,-0.325079,0.929648,-0.085157,0.195999,-0.198208],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,-1,7,-1,-1],"r":[2,4,6,-1,-1,-1,8,-1,-1],"si":[51,3,81,0,0,0,77,0,0],"sc":[2.691258,2.523957,-37.089134,-0.716912,1.023076,0.961891,-8.828,-0.33097,0.083833],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[18,76,85,84,86,0,49,0,0,0,0,0,0,0,0],"sc":[120.96711,-116.857559,-9.602273,-4.37188,-6.256196,139.914001,2.931005,-0.291528,0.511959,0.853637,-0.10513,-0.00383,0.754178,-0.941867,-0.240404],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,55,13,76,3,69,40,0,0,0,0,0,0,0,0],"sc":[-24.662222,6.398832,1.349354,-91.961555,6.125951,-52.888889,1.027621,-0.425913,0.298575,0.979654,-0.137411,0.122424,-0.157769,-0.152737,-0.395591],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[86,84,40,63,13,77,49,0,0,0,0,0,0,0,0],"sc":[-6.852004,-5.3034,0.998558,2.026764,0.961512,-15.147555,6.633497,-0.010735,-0.322965,-0.525504,0.469155,-0.321029,0.088679,-0.527406,-0.222715],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[86,83,83,20,55,66,14,0,0,0,0,0,0,0,0],"sc":[-6.899006,-1.293331,1.026713,1.08448,4.975279,1.083034,2.109721,-0.242922,0.302574,0.113108,0.82987,-0.384936,0.026939,-0.041887,0.357551],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,-1,7,-1,-1],"r":[2,4,6,-1,-1,-1,8,-1,-1],"si":[51,3,81,0,0,0,89,0,0],"sc":[2.691258,2.523957,-37.089134,-0.681435,0.849328,0.852379,266.0,-0.025961,-0.38259],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[51,3,77,0,0,52,53,0,0,0,0],"sc":[2.691258,2.523957,-9.101334,-0.670078,0.801274,157.289337,4.163138,-0.023124,-0.370557,0.426411,-0.109064],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,-1,3,5,7,-1,-1,-1,-1],"r":[2,-1,4,6,8,-1,-1,-1,-1],"si":[51,0,89,4,77,0,0,0,0],"sc":[2.691258,0.790205,167.0,4.175446,-9.101334,0.869923,-0.037313,-0.229061,0.092867],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[51,0,7,0,0,89,86,0,0,0,0],"sc":[2.691258,92.21711,36.055256,0.130634,0.804667,266.0,-6.899006,-0.112812,-0.439628,0.567549,-0.113701],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,-1,3,5,7,-1,-1,-1,-1],"r":[2,-1,4,6,8,-1,-1,-1,-1],"si":[81,0,46,84,27,0,0,0,0],"sc":[-36.94865,0.797189,202.313782,-4.447885,2.181284,-0.261867,0.087795,0.797251,-0.066925],"dl":[0,0,0,0,0,0,0,0,0]},{"l":[1,-1,3,-1,5,-1,-1],"r":[2,-1,4,-1,6,-1,-1],"si":[81,0,51,0,51,0,0],"sc":[-36.94865,0.765301,2.691258,0.605588,3.181017,-0.543807,-0.082991],"dl":[0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[81,49,78,0,81,77,2,0,0,0,0,0,0,0,0],"sc":[-24.188057,2.770834,-22.934,92.21711,-37.089134,-15.143111,170.478668,0.1169,0.742953,0.638119,-0.04086,-0.244449,-0.028582,-0.476323,-0.081655],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[20,43,37,0,70,56,51,0,0,0,0,0,0,0,0],"sc":[1.033476,0.954182,3.500767,123.382889,-48.073334,167.510666,2.606183,0.427523,-0.042954,-0.723178,-0.233351,0.13173,0.637486,0.510263,-0.220532],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,-1,11,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,-1,12,-1,-1,-1,-1,-1,-1],"si":[4,81,72,89,78,0,89,0,0,0,0,0,0],"sc":[5.671906,-23.124258,-45.767113,229.0,-22.934,-0.507495,297.0,0.728534,0.139305,-0.099008,-0.546049,-0.189504,0.051447],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[1,76,85,26,62,46,49,0,0,0,0,0,0,0,0],"sc":[113.022888,-116.857559,-9.270091,2.302646,-0.10287,162.893997,3.031479,-0.375764,0.110914,-0.142449,0.58292,-0.042622,0.626738,-0.672213,-0.152012],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[2,76,85,0,55,78,49,0,0,0,0,0,0,0,0],"sc":[119.28933,-148.393326,-9.270091,124.522446,5.652321,-29.002001,2.931005,-0.21188,0.00382,0.070329,0.541147,-0.104604,0.479048,-0.763381,-0.157363],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,-1,11,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,-1,12,-1,-1,-1,-1,-1,-1],"si":[87,4,54,49,30,0,77,0,0,0,0,0,0],"sc":[-64.622223,6.012198,20.559334,16.332451,35.500443,-0.517049,-15.143111,0.295837,-0.614233,-0.319739,0.008236,-0.278097,-0.067935],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,-1,11,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,-1,12,-1,-1,-1,-1,-1,-1],"si":[81,4,54,34,9,0,17,0,0,0,0,0,0],"sc":[-23.812807,6.115619,19.965778,2.194889,2.21352,-0.564995,0.777974,0.398248,-0.013411,-0.099295,-0.353686,-0.0,-0.188766],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[86,71,3,77,28,27,49,0,0,0,0,0,0,0,0],"sc":[-6.256196,-85.00222,2.705722,-13.566222,1.515843,1.071943,8.113975,0.162261,0.788272,0.520991,-0.0547,-0.043498,0.071102,-0.310073,-0.114901],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[20,43,57,20,70,8,55,0,0,0,0,0,0,0,0],"sc":[1.033476,0.958013,3.318712,0.988581,-48.073334,9.455778,5.776346,0.007363,0.399395,-0.66977,-0.153077,0.108451,0.661607,-0.084711,0.24559],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[51,15,91,0,0,46,76,0,0,0,0],"sc":[2.682528,1.415998,1190.0,0.599661,0.138327,208.816452,-42.956444,-0.115678,0.360898,0.493733,-0.096925],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[83,85,38,24,47,27,72,0,0,0,0,0,0,0,0],"sc":[0.505976,-9.212375,0.485634,214.725784,166.670227,2.182912,-49.475334,-0.001604,0.70966,-0.058984,-0.351567,0.074216,-0.067392,0.642053,0.041414],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[81,51,0,40,89,29,25,0,0,0,0,0,0,0,0],"sc":[-21.851091,2.691258,148.030228,1.499735,264.0,156.065781,193.467331,0.630479,0.269653,0.18952,-0.265643,-0.422187,-0.050823,0.026345,-0.090609],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[81,29,78,0,0,51,3,0,0,0,0],"sc":[-36.94865,38.639557,-14.913555,0.091823,0.639707,2.801506,2.523957,0.38369,-0.168844,-0.666871,0.242771],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[81,17,84,0,0,70,81,0,0,0,0],"sc":[-36.94865,0.621314,-5.118064,0.089527,0.589859,-43.716446,-21.851091,-0.387684,-0.098311,0.142999,-0.246568],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[71,89,53,89,49,51,49,0,0,0,0,0,0,0,0],"sc":[-85.00222,246.0,10.381052,145.0,12.785897,3.181017,2.770834,0.081015,0.777683,0.117327,-0.266931,-0.510236,-0.069138,0.433432,-0.054141],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[81,38,20,0,0,83,60,0,0,0,0],"sc":[-36.94865,0.727884,1.08448,0.16848,0.611863,-0.229082,6.71215,-0.174191,0.074719,0.565631,-0.002199],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[20,43,60,0,70,56,83,0,0,0,0,0,0,0,0],"sc":[1.033476,0.958013,6.616673,134.722885,-48.073334,167.510666,-2.04581,0.331165,-0.0113,-0.668953,-0.11932,0.05257,0.448672,-0.235006,0.043924],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[70,74,8,49,4,17,83,0,0,0,0,0,0,0,0],"sc":[-50.773777,-56.294666,5.130667,2.686917,3.785674,0.564895,-1.93762,0.343078,-0.163167,0.047117,0.688662,0.081781,-0.343025,-0.161264,0.062903],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[51,40,8,0,6,70,60,0,0,0,0,0,0,0,0],"sc":[2.691258,1.499735,5.130667,92.21711,5.449111,-48.073334,6.71215,0.036318,0.551275,0.018107,0.20504,-0.544561,-0.174705,0.094954,-0.118308],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[12,21,20,15,67,43,60,0,0,0,0,0,0,0,0],"sc":[46.740814,1.053483,1.08448,1.259053,1.028604,0.958013,6.71215,0.068996,-0.127684,0.439522,0.038267,0.220458,-0.150882,0.539353,-0.045844],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,-1,9,11,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,-1,10,12,-1,-1,-1,-1,-1,-1],"si":[1,49,49,76,0,1,7,0,0,0,0,0,0],"sc":[122.372444,16.332451,2.931005,-137.321548,-0.578546,124.510887,58.672997,-0.165545,0.249233,0.02032,-0.613324,-0.083631,0.357288],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[14,30,49,17,45,87,55,0,0,0,0,0,0,0,0],"sc":[-0.349192,11.245662,3.281271,0.837493,1.010225,-68.552666,6.363223,-0.684329,-0.05007,0.116538,-0.14475,0.500329,0.048136,-0.072547,0.294654],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,-1,9,11,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,-1,10,12,-1,-1,-1,-1,-1,-1],"si":[57,7,71,55,0,60,56,0,0,0,0,0,0],"sc":[2.783227,65.153252,-85.00222,6.895711,0.033477,6.75113,187.789993,0.513714,0.149789,0.349091,-0.101699,-0.033603,-0.258348],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[20,43,55,0,70,57,21,0,0,0,0,0,0,0,0],"sc":[1.032139,0.957434,6.774177,129.432663,-48.073334,3.318361,1.009384,0.233309,-0.007147,-0.673244,-0.091756,0.30349,-0.025651,-0.028659,0.528717],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[20,43,37,7,70,56,24,0,0,0,0,0,0,0,0],"sc":[1.032139,0.958013,3.500767,14.641035,-48.073334,167.510666,194.147781,0.012243,0.271009,-0.522232,-0.092574,0.089375,0.464634,0.075915,-0.174564],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[85,76,15,8,72,13,42,0,0,0,0,0,0,0,0],"sc":[-9.929124,-116.857559,1.357652,11.053555,-54.680443,2.693262,1.341444,-0.097728,0.04356,0.48195,0.125438,0.05184,-0.18132,-0.768798,-0.14843],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[71,86,3,72,60,3,49,0,0,0,0,0,0,0,0],"sc":[-85.00222,-6.899006,2.523957,-49.475334,4.651597,2.118481,2.723405,0.498499,0.068835,0.104619,-0.143122,-0.014366,-0.588817,0.25189,-0.061112],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[71,4,0,55,90,29,7,0,0,0,0,0,0,0,0],"sc":[-59.031555,6.115619,147.599106,5.776346,1412.0,156.065781,10.845033,0.008406,0.295257,-0.181852,0.096856,-0.339589,-0.025293,-0.065972,0.058976],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[20,38,37,85,45,46,20,0,0,0,0,0,0,0,0],"sc":[1.033476,0.765448,3.500767,-8.276228,1.010225,166.077332,1.110567,-0.655723,-0.103576,0.09051,-0.120302,0.071372,0.482869,-0.159504,0.112305],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[20,78,83,89,70,17,67,0,0,0,0,0,0,0,0],"sc":[1.033476,-19.638222,-2.029953,232.0,-48.073334,1.116107,1.026601,-0.089281,0.153384,-0.502608,-0.084689,-0.231319,-0.029185,0.235942,-0.03834],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[81,9,52,0,0,15,51,0,0,0,0],"sc":[-36.94865,1.627535,173.371994,-0.0,0.430097,1.357652,4.998427,-0.016862,-0.275814,0.448704,-0.0],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[78,70,86,40,89,27,30,0,0,0,0,0,0,0,0],"sc":[-16.909334,-43.716446,-6.308342,1.776511,232.0,2.739232,31.764425,-0.474281,0.061873,-0.069894,0.035249,0.27336,-0.046325,-0.16878,0.008956],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[1,9,49,3,13,1,72,0,0,0,0,0,0,0,0],"sc":[123.063332,3.313689,2.931005,4.225908,1.209876,124.510887,-53.010223,0.17306,-0.124735,0.01847,0.42869,-0.004167,-0.49294,0.216039,-0.061733],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[49,40,81,0,0,7,69,0,0,0,0,0,0,0,0],"sc":[2.770834,1.499735,-37.089134,92.21711,114.098442,36.379192,-91.180443,-0.0,0.413943,0.13398,-0.003578,0.085125,0.421216,-0.313226,-0.021955],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[16,52,3,29,63,25,70,0,0,0,0,0,0,0,0],"sc":[-4.79404,166.705551,4.179003,107.271332,1.972961,191.351562,-43.716446,0.194896,-0.069016,0.090591,0.506219,-0.077607,0.145256,-0.33445,-0.05322],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[51,8,89,8,17,72,62,0,0,0,0,0,0,0,0],"sc":[2.801506,9.455778,266.0,6.446445,1.083311,-49.475334,5.405729,0.13267,-0.002341,0.397396,0.081034,0.429102,-0.034592,-0.063064,-0.409037],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[16,34,15,15,39,90,52,0,0,0,0,0,0,0,0],"sc":[-4.79404,1.838555,1.357652,1.010338,2.353371,1412.0,95.109108,0.015952,0.404993,-0.041635,0.115351,-0.075616,0.084236,0.024038,-0.450424],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[38,1,83,67,70,15,9,0,0,0,0,0,0,0,0],"sc":[0.803871,112.808891,-2.043067,1.032888,-43.716446,1.088052,2.262395,0.166565,-0.092186,-0.349016,-0.027952,-0.083047,0.07358,0.095502,0.400188],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[85,60,90,90,37,52,0,0,0,0,0,0,0,0,0],"sc":[-9.232417,6.71215,1435.0,1323.0,4.03826,169.369781,134.420441,-0.047748,0.308032,-0.333934,0.012811,-0.158179,0.005646,0.183374,-0.072449],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,-1,-1,7,9,-1,-1,-1,-1],"r":[2,4,6,-1,-1,8,10,-1,-1,-1,-1],"si":[3,3,15,0,0,75,89,0,0,0,0],"sc":[2.523957,2.255427,1.128972,0.048306,-0.553419,100.638885,266.0,-0.059393,0.265107,0.278035,-0.022244],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,-1,-1,9,-1,-1,-1,-1],"r":[2,4,6,8,-1,-1,10,-1,-1,-1,-1],"si":[81,9,71,0,0,0,3,0,0,0,0],"sc":[-36.94865,2.302297,-98.029778,100.667778,0.32684,-0.450485,2.523957,-0.003188,0.003856,-0.300671,0.002104],"dl":[0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[85,58,15,52,40,1,36,0,0,0,0,0,0,0,0],"sc":[-9.212375,66.933289,1.357652,164.313553,2.205836,127.755112,0.489169,0.122124,-0.154838,0.467203,0.022551,0.082588,-0.08656,-0.660183,-0.093104],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[55,15,70,18,55,89,55,0,0,0,0,0,0,0,0],"sc":[5.782039,1.40195,-37.841557,130.878891,5.120178,246.0,6.284276,0.065074,-0.088818,-0.095398,-0.420651,0.368559,0.039471,0.101255,-0.055036],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[85,58,15,60,77,77,72,0,0,0,0,0,0,0,0],"sc":[-9.212375,66.933289,1.357652,5.604796,-16.444445,-15.010222,-65.695999,0.072911,-0.178873,0.075498,0.438265,-0.119604,0.044122,-0.059683,-0.363301],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"l":[1,3,5,7,9,11,13,-1,-1,-1,-1,-1,-1,-1,-1],"r":[2,4,6,8,10,12,14,-1,-1,-1,-1,-1,-1,-1,-1],"si":[15,70,56,4,4,27,26,0,0,0,0,0,0,0,0],"sc":[1.3556,-21.338667,202.263779,5.299432,3.622248,1.863741,2.151155,0.218069,-0.076739,0.024729,-0.086237,-0.488878,-0.042003,0.204928,-0.064653],"dl":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}]};
+  const STRIP_CLASSIFIER_MODEL = {"base_score":0.75,"objective":"binary:logistic","feature_names":["band_R_mean","band_G_mean","band_B_mean","band_R_std","band_G_std","band_B_std","band_H_mean","band_H_std","band_S_mean","band_S_std","band_V_mean","band_V_std","band_L_mean","band_L_std","band_a_mean","band_a_std","band_b_mean","band_b_std","band_gray_mean","band_gray_std","band_R_over_G","band_B_over_G","band_R_over_B","bg_R_mean","bg_G_mean","bg_B_mean","bg_R_std","bg_G_std","bg_B_std","bg_H_mean","bg_H_std","bg_S_mean","bg_S_std","bg_V_mean","bg_V_std","bg_L_mean","bg_L_std","bg_a_mean","bg_a_std","bg_b_mean","bg_b_std","bg_gray_mean","bg_gray_std","bg_R_over_G","bg_B_over_G","bg_R_over_B","upper_R_mean","upper_G_mean","upper_B_mean","upper_R_std","upper_G_std","upper_B_std","upper_H_mean","upper_H_std","upper_S_mean","upper_S_std","upper_V_mean","upper_V_std","upper_L_mean","upper_L_std","upper_a_mean","upper_a_std","upper_b_mean","upper_b_std","upper_gray_mean","upper_gray_std","upper_R_over_G","upper_B_over_G","upper_R_over_B","delta_R_mean","band_minus_upper_R_mean","delta_G_mean","band_minus_upper_G_mean","delta_B_mean","band_minus_upper_B_mean","delta_H_mean","band_minus_upper_H_mean","delta_S_mean","band_minus_upper_S_mean","delta_V_mean","band_minus_upper_V_mean","delta_L_mean","band_minus_upper_L_mean","delta_a_mean","band_minus_upper_a_mean","delta_b_mean","band_minus_upper_b_mean","delta_gray_mean","band_minus_upper_gray_mean","roi_upper_center","roi_band_center","roi_distance_upper_to_band","roi_auto_detected"],"trees":[{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.149254,0.06],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.137365,0.058529],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.127143,0.058022],"dl":[0,0,0]},{"l":[1,3,5,-1,-1,-1,-1],"r":[2,4,6,-1,-1,-1,-1],"si":[3,3,91,0,0,0,0],"sc":[10.945704,9.083476,1053.0,0.056485,-0.0,-0.116025,0.027719],"dl":[0,0,0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.106175,0.056503],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.103771,0.055433],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.093314,0.05426],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[929.0,-0.089536,0.053693],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[929.0,-0.085931,0.052748],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[91,76,0,0,0],"sc":[1053.0,-68.334892,0.051046,-0.085283,0.020206],"dl":[0,0,0,0,0]},{"l":[1,3,5,-1,-1,-1,-1],"r":[2,4,6,-1,-1,-1,-1],"si":[3,51,69,0,0,0,0],"sc":[11.561868,15.607809,-68.712448,0.050676,-0.0,0.016943,-0.079886],"dl":[0,0,0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.074,0.050631],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.071658,0.050551],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.067985,0.04985],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.069073,0.048945],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.070749,0.048866],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.063473,0.048014],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.064958,0.047353],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.058284,0.04666],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.057349,0.04609],"dl":[0,0,0]},{"l":[1,3,5,-1,-1,-1,-1],"r":[2,4,6,-1,-1,-1,-1],"si":[3,17,1,0,0,0,0],"sc":[13.304976,1.759463,152.055557,0.044215,-0.0,-0.0,-0.057008],"dl":[0,0,0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.054596,0.045352],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.05305,0.044036],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,23,0,0,0],"sc":[1227.0,189.399994,0.043625,-0.000748,-0.054219],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.055345,0.043283],"dl":[0,0,0]},{"l":[1,-1,3,-1,-1],"r":[2,-1,4,-1,-1],"si":[19,0,69,0,0],"sc":[10.416728,0.041924,-68.712448,0.010433,-0.053908],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,45,0,0,0],"sc":[1227.0,0.965112,0.042593,-0.0,-0.053594],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,45,0,0,0],"sc":[1227.0,0.973837,0.041452,-0.0,-0.051485],"dl":[0,0,0,0,0]},{"l":[1,-1,3,5,-1,-1,-1],"r":[2,-1,4,6,-1,-1,-1],"si":[4,0,91,39,0,0,0],"sc":[8.698203,0.039115,1053.0,0.734854,0.012395,-0.0,-0.050826],"dl":[0,0,0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.050815,0.041465],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,7,0,0,0],"sc":[1227.0,3.075221,0.040883,-0.0,-0.048922],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,85,0,0,0],"sc":[1227.0,-4.314202,0.040316,-0.04776,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.048025,0.039424],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,24,0,0,0],"sc":[1227.0,185.269104,0.038773,-0.0,-0.045239],"dl":[0,0,0,0,0]},{"l":[1,3,5,-1,-1,-1,-1],"r":[2,4,6,-1,-1,-1,-1],"si":[3,84,85,0,0,0,0],"sc":[13.304976,-6.88954,-6.932065,-0.0,0.040509,-0.0,-0.043],"dl":[0,0,0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,7,0,0,0],"sc":[1227.0,3.075221,0.037544,-0.0,-0.044045],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,75,0,0,0],"sc":[1227.0,-25.587999,0.037201,-0.042671,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[91,76,0,0,0],"sc":[1053.0,-68.334892,0.035314,-0.042975,0.012086],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,57,0,0,0],"sc":[1227.0,18.573143,0.037183,-0.042846,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,76,0,0,0],"sc":[1227.0,-77.720665,0.036512,-0.043053,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,6,0,0,0],"sc":[1227.0,72.966667,0.036071,-0.039851,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.040913,0.035693],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,85,0,0,0],"sc":[1227.0,-4.463727,0.035524,-0.038965,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[4,70,0,0,0],"sc":[12.768702,11.139556,-0.033896,0.035235,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,85,0,0,0],"sc":[933.0,-4.314202,0.034692,-0.038188,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,85,0,0,0],"sc":[1227.0,-4.314202,0.033296,-0.037581,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.038923,0.032842],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,72,0,0,0],"sc":[933.0,11.463555,0.031243,-0.0,-0.034594],"dl":[0,0,0,0,0]},{"l":[1,-1,3,-1,-1],"r":[2,-1,4,-1,-1],"si":[1,0,74,0,0],"sc":[153.849335,0.028536,14.441112,-0.0,-0.034148],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,23,0,0,0],"sc":[933.0,192.872223,0.032919,-0.0,-0.033956],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,52,0,0,0],"sc":[1227.0,142.129776,0.031587,-0.0,-0.035345],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,7,0,0,0],"sc":[1227.0,3.796809,0.030384,-0.0,-0.031378],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[3,84,0,0,0],"sc":[13.304976,-6.559006,-0.030438,-0.0,0.032854],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,7,0,0,0],"sc":[1227.0,3.253953,0.030178,-0.0,-0.033469],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,84,0,0,0],"sc":[1227.0,-5.940836,0.029671,-0.031743,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,66,0,0,0],"sc":[1227.0,1.003631,0.030171,-0.0,-0.031754],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[3,83,0,0,0],"sc":[13.304976,-2.880889,-0.03017,-0.0,0.031052],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[4,26,0,0,0],"sc":[12.768702,3.19397,-0.02635,0.029487,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,68,0,0,0],"sc":[1227.0,0.997605,0.028294,-0.0,-0.031577],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[4,70,0,0,0],"sc":[12.768702,5.814667,-0.026513,0.02969,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,52,0,0,0],"sc":[933.0,142.129776,0.027099,-0.0,-0.031403],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[3,23,0,0,0],"sc":[13.304976,219.130661,-0.024769,0.028655,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[3,84,0,0,0],"sc":[13.304976,-6.115401,-0.023504,-0.0,0.028009],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,61,0,0,0],"sc":[1227.0,0.685414,0.026428,-0.0,-0.027495],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,78,0,0,0],"sc":[1227.0,-20.878666,0.026988,-0.027072,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,83,0,0,0],"sc":[1227.0,-2.531006,0.025141,-0.02687,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.023642,-0.027234],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.029438,0.024165],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,57,0,0,0],"sc":[1227.0,17.450863,0.0256,-0.027343,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,84,0,0,0],"sc":[1227.0,-5.942298,0.025488,-0.026196,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.023949,-0.024287],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,78,0,0,0],"sc":[1227.0,-22.029556,0.023136,-0.022858,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[3,84,0,0,0],"sc":[13.304976,-5.880244,-0.022104,-0.0,0.023822],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[3,38,0,0,0],"sc":[13.304976,0.816752,-0.022275,0.02207,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,78,0,0,0],"sc":[1227.0,-20.878666,0.022702,-0.024555,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.028104,0.023441],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.02725,0.021897],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,38,0,0,0],"sc":[1227.0,0.58534,0.021145,-0.0,-0.024749],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[3,38,0,0,0],"sc":[13.304976,0.816752,-0.021581,0.021306,-0.0],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,87,0,0,0],"sc":[1227.0,-24.369112,0.021523,-0.02069,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.026222,0.021437],"dl":[0,0,0]},{"l":[1,-1,3,-1,-1],"r":[2,-1,4,-1,-1],"si":[90,0,76,0,0],"sc":[764.0,-0.021128,-124.580887,-0.0,0.022604],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.016274,0.020193],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,38,0,0,0],"sc":[1227.0,0.606335,0.02068,-0.0,-0.021745],"dl":[0,0,0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,33,0,0,0],"sc":[1227.0,203.782883,0.01967,-0.0,-0.021388],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[19,0,0],"sc":[12.568588,0.016308,-0.019258],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.017065,-0.018241],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.018251,-0.015341],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[90,85,0,0,0],"sc":[1227.0,-5.228174,0.019414,-0.020688,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.020107,-0.018876],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.016819,-0.017001],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.022347,0.017213],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[3,38,0,0,0],"sc":[13.304976,0.816752,-0.014358,0.018179,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.023673,0.018016],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.018412,-0.013869],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.014302,0.017595],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[1,76,0,0,0],"sc":[164.587326,-77.720665,-0.018071,-0.0,0.015968],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.01391,0.018151],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[764.0,-0.016697,0.015714],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[4,0,0],"sc":[12.768702,0.017831,-0.014434],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.014959,0.016803],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.011449,0.015745],"dl":[0,0,0]},{"l":[1,-1,3,-1,-1],"r":[2,-1,4,-1,-1],"si":[90,0,89,0,0],"sc":[764.0,-0.014308,265.0,0.018193,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.013113,0.015153],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.020435,0.013734],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[80,0,0],"sc":[18.572222,0.013904,-0.014008],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.013296,0.01472],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[1227.0,-0.020747,0.013952],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[933.0,-0.020291,0.014235],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.014571,-0.012661],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[1,0,0],"sc":[164.587326,0.011989,-0.014848],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[4,0,0],"sc":[12.768702,0.014839,-0.009352],"dl":[0,0,0]},{"l":[1,3,-1,-1,-1],"r":[2,4,-1,-1,-1],"si":[1,8,0,0,0],"sc":[164.587326,8.729777,-0.012978,-0.0,0.015633],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.014501,-0.013053],"dl":[0,0,0]},{"l":[1,-1,3,-1,-1],"r":[2,-1,4,-1,-1],"si":[90,0,78,0,0],"sc":[764.0,-0.013981,-22.092222,-0.0,0.014019],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[18,0,0],"sc":[161.399109,0.013567,-0.012569],"dl":[0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[3,0,0],"sc":[13.304976,0.012955,-0.012227],"dl":[0,0,0]},{"l":[1,-1,3,-1,-1],"r":[2,-1,4,-1,-1],"si":[90,0,89,0,0],"sc":[764.0,-0.014675,269.0,0.017141,-0.0],"dl":[0,0,0,0,0]},{"l":[1,-1,-1],"r":[2,-1,-1],"si":[90,0,0],"sc":[764.0,-0.013741,0.013943],"dl":[0,0,0]},{"l":[1,-1,3,-1,-1],"r":[2,-1,4,-1,-1],"si":[90,0,25,0,0],"sc":[764.0,-0.012704,201.968216,0.013183,-0.0],"dl":[0,0,0,0,0]}]};
+
+  // ============================================================
+  //  AUTO-DETECTION + FEATURE EXTRACTION + XGBOOST PIPELINE
+  //  (ported from Code 1/Code 2 Python + xgb_pure.py)
+  // ============================================================
+// ============================================================
+// ChromaSnap Strip — Auto-detection + 93-feature extraction +
+// pure-JS XGBoost evaluation. Ported from Code 1/Code 2 (Python)
+// and xgb_pure.py, faithfully.
+// ============================================================
+
+// ---- Color space conversions (matched to OpenCV / skimage conventions) ----
+
+// OpenCV HSV: H in [0,179], S/V in [0,255] — NOT the usual 0-360/0-100 scale.
+function rgbToHsvCV(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d !== 0) {
+    if (mx === r) h = ((g - b) / d) % 6;
+    else if (mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 30; // 60/2 — OpenCV halves hue to fit 0-179
+    if (h < 0) h += 180;
+  }
+  const s = mx === 0 ? 0 : (d / mx) * 255;
+  const v = mx * 255;
+  return { h, s, v };
+}
+
+// skimage rgb2lab: sRGB -> linear RGB -> XYZ (D65) -> CIELAB
+function rgbToLabSkimage(r, g, b) {
+  function toLinear(c) {
+    c = c / 255;
+    return c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
+  }
+  const rl = toLinear(r), gl = toLinear(g), bl = toLinear(b);
+
+  // sRGB D65 -> XYZ matrix
+  const x = rl * 0.4124564 + gl * 0.3575761 + bl * 0.1804375;
+  const y = rl * 0.2126729 + gl * 0.7151522 + bl * 0.0721750;
+  const z = rl * 0.0193339 + gl * 0.1191920 + bl * 0.9503041;
+
+  // D65 white point
+  const Xn = 0.95047, Yn = 1.0, Zn = 1.08883;
+  function f(t) {
+    return t > 0.008856 ? Math.cbrt(t) : (7.787 * t) + 16 / 116;
+  }
+  const fx = f(x / Xn), fy = f(y / Yn), fz = f(z / Zn);
+
+  const L = (116 * fy) - 16;
+  const a = 500 * (fx - fy);
+  const bb = 200 * (fy - fz);
+  return { L, a, b: bb };
+}
+
+function rgbToGray(r, g, b) {
+  // cv2.cvtColor(..., COLOR_RGB2GRAY) standard luminosity weights
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+// ---- Robust quartile mean/std (matches get_robust_mean_std) ----
+function robustMeanStd(values, invert) {
+  const sorted = Float64Array.from(values).sort();
+  const topQuarter = Math.max(1, Math.floor(sorted.length * 0.25));
+  const selected = invert ? sorted.slice(sorted.length - topQuarter) : sorted.slice(0, topQuarter);
+  let sum = 0;
+  for (let i = 0; i < selected.length; i++) sum += selected[i];
+  const mean = sum / selected.length;
+  let sqSum = 0;
+  for (let i = 0; i < selected.length; i++) sqSum += (selected[i] - mean) ** 2;
+  const std = Math.sqrt(sqSum / selected.length);
+  return { mean, std };
+}
+
+function safeRatio(a, b) {
+  return a / (b + 1e-6);
+}
+
+// ---- Extract the 23 stats for one ROI (band / bg / upper) ----
+function extractRoiFeatures(pixels, prefix) {
+  // pixels: array of {r,g,b} in 0-255
+  const isBgNoise = (prefix === 'bg' || prefix === 'upper');
+  const n = pixels.length;
+
+  const rArr = new Float64Array(n), gArr = new Float64Array(n), bArr = new Float64Array(n);
+  const hArr = new Float64Array(n), sArr = new Float64Array(n), vArr = new Float64Array(n);
+  const lArr = new Float64Array(n), aArr = new Float64Array(n), labBArr = new Float64Array(n);
+  const grayArr = new Float64Array(n);
+
+  for (let i = 0; i < n; i++) {
+    const { r, g, b } = pixels[i];
+    rArr[i] = r; gArr[i] = g; bArr[i] = b;
+    const hsv = rgbToHsvCV(r, g, b);
+    hArr[i] = hsv.h; sArr[i] = hsv.s; vArr[i] = hsv.v;
+    const lab = rgbToLabSkimage(r, g, b);
+    lArr[i] = lab.L; aArr[i] = lab.a; labBArr[i] = lab.b;
+    grayArr[i] = rgbToGray(r, g, b);
+  }
+
+  const f = {};
+  const rStat = robustMeanStd(rArr, isBgNoise), gStat = robustMeanStd(gArr, isBgNoise), bStat = robustMeanStd(bArr, isBgNoise);
+  f[`${prefix}_R_mean`] = rStat.mean; f[`${prefix}_G_mean`] = gStat.mean; f[`${prefix}_B_mean`] = bStat.mean;
+  f[`${prefix}_R_std`] = rStat.std;   f[`${prefix}_G_std`] = gStat.std;   f[`${prefix}_B_std`] = bStat.std;
+
+  const hStat = robustMeanStd(hArr, isBgNoise), sStat = robustMeanStd(sArr, isBgNoise), vStat = robustMeanStd(vArr, isBgNoise);
+  f[`${prefix}_H_mean`] = hStat.mean; f[`${prefix}_S_mean`] = sStat.mean; f[`${prefix}_V_mean`] = vStat.mean;
+  f[`${prefix}_H_std`] = hStat.std;   f[`${prefix}_S_std`] = sStat.std;   f[`${prefix}_V_std`] = vStat.std;
+
+  const lStat = robustMeanStd(lArr, isBgNoise), aStat = robustMeanStd(aArr, isBgNoise), labBStat = robustMeanStd(labBArr, isBgNoise);
+  f[`${prefix}_L_mean`] = lStat.mean; f[`${prefix}_a_mean`] = aStat.mean; f[`${prefix}_b_mean`] = labBStat.mean;
+  f[`${prefix}_L_std`] = lStat.std;   f[`${prefix}_a_std`] = aStat.std;   f[`${prefix}_b_std`] = labBStat.std;
+
+  const grayStat = robustMeanStd(grayArr, isBgNoise);
+  f[`${prefix}_gray_mean`] = grayStat.mean; f[`${prefix}_gray_std`] = grayStat.std;
+
+  f[`${prefix}_R_over_G`] = safeRatio(rStat.mean, gStat.mean);
+  f[`${prefix}_B_over_G`] = safeRatio(bStat.mean, gStat.mean);
+  f[`${prefix}_R_over_B`] = safeRatio(rStat.mean, bStat.mean);
+
+  return f;
+}
+
+function buildFeatureDict93(bandPixels, bgPixels, upperPixels, testIdx, controlIdx) {
+  const features = {};
+  Object.assign(features, extractRoiFeatures(bandPixels, 'band'));
+  Object.assign(features, extractRoiFeatures(bgPixels, 'bg'));
+  Object.assign(features, extractRoiFeatures(upperPixels, 'upper'));
+
+  const channels = ['R_mean','G_mean','B_mean','H_mean','S_mean','V_mean','L_mean','a_mean','b_mean','gray_mean'];
+  for (const ch of channels) {
+    features[`delta_${ch}`] = features[`band_${ch}`] - features[`bg_${ch}`];
+    features[`band_minus_upper_${ch}`] = features[`band_${ch}`] - features[`upper_${ch}`];
+  }
+
+  features['roi_upper_center'] = controlIdx;
+  features['roi_band_center'] = testIdx;
+  features['roi_distance_upper_to_band'] = testIdx - controlIdx;
+  features['roi_auto_detected'] = 1.0;
+
+  return features;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { rgbToHsvCV, rgbToLabSkimage, rgbToGray, robustMeanStd, extractRoiFeatures, buildFeatureDict93 };
+}
+
+
+// ============================================================
+// ChromaSnap Strip — Detection pipeline (marker + peak finding)
+// Ported from Code 1/Code 2 (Python/OpenCV/scipy.find_peaks)
+// ============================================================
+
+// Downsampled proxy resolution used for marker/peak detection only.
+// Final feature-extraction crops always come from the FULL resolution
+// image — only the *positions* are found on this cheaper proxy.
+const DETECT_MAX_DIM = 1000;
+
+function isGreenHSV(h, s, v) {
+  // OpenCV threshold: lower=[40,50,50], upper=[85,255,255] in H:0-179,S/V:0-255
+  return h >= 40 && h <= 85 && s >= 50 && v >= 50;
+}
+
+// Connected-components (4-connectivity flood fill) to find the largest
+// green blob — stands in for cv2.findContours + max(contours, key=area).
+function findLargestGreenBlob(mask, w, h) {
+  const visited = new Uint8Array(w * h);
+  let best = null;
+  let bestSize = 0;
+
+  const stackX = new Int32Array(w * h);
+  const stackY = new Int32Array(w * h);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      if (!mask[idx] || visited[idx]) continue;
+
+      let sp = 0;
+      stackX[sp] = x; stackY[sp] = y; sp++;
+      visited[idx] = 1;
+
+      let minX = x, maxX = x, minY = y, maxY = y, size = 0;
+      let sumX = 0, sumY = 0;
+
+      while (sp > 0) {
+        sp--;
+        const cx = stackX[sp], cy = stackY[sp];
+        size++;
+        sumX += cx; sumY += cy;
+        if (cx < minX) minX = cx;
+        if (cx > maxX) maxX = cx;
+        if (cy < minY) minY = cy;
+        if (cy > maxY) maxY = cy;
+
+        const neighbors = [[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]];
+        for (const [nx, ny] of neighbors) {
+          if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+          const nidx = ny * w + nx;
+          if (mask[nidx] && !visited[nidx]) {
+            visited[nidx] = 1;
+            stackX[sp] = nx; stackY[sp] = ny; sp++;
+          }
+        }
+      }
+
+      if (size > bestSize) {
+        bestSize = size;
+        best = { minX, maxX, minY, maxY, cx: sumX / size, cy: sumY / size, size };
+      }
+    }
+  }
+  return best;
+}
+
+// Draws imgEl into a canvas at a bounded max dimension, returns {canvas, ctx, scale, w, h}
+function drawDownsampled(imgEl, maxDim) {
+  const scale = Math.min(1, maxDim / Math.max(imgEl.naturalWidth, imgEl.naturalHeight));
+  const w = Math.max(1, Math.round(imgEl.naturalWidth * scale));
+  const h = Math.max(1, Math.round(imgEl.naturalHeight * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(imgEl, 0, 0, w, h);
+  return { canvas, ctx, scale, w, h };
+}
+
+// Fast histogram-based sliding-window 2D median filter (matches
+// cv2.medianBlur with an odd kernel size, on a single-channel image).
+function medianBlur2D(gray, w, h, ksize) {
+  const half = Math.floor(ksize / 2);
+  const out = new Float64Array(w * h);
+  const need = Math.floor((ksize * ksize) / 2) + 1; // index of median in sorted order (1-based count)
+
+  for (let y = 0; y < h; y++) {
+    const y1 = Math.max(0, y - half), y2 = Math.min(h - 1, y + half);
+    const hist = new Int32Array(256);
+    let count = 0;
+
+    // seed histogram for x=0 window
+    const x1_0 = Math.max(0, -half), x2_0 = Math.min(w - 1, half);
+    for (let yy = y1; yy <= y2; yy++) {
+      for (let xx = x1_0; xx <= x2_0; xx++) {
+        hist[gray[yy * w + xx] | 0]++; count++;
+      }
+    }
+
+    for (let x = 0; x < w; x++) {
+      // find median from histogram
+      let acc = 0, med = 0;
+      for (let b = 0; b < 256; b++) {
+        acc += hist[b];
+        if (acc >= Math.floor((count + 1) / 2)) { med = b; break; }
+      }
+      out[y * w + x] = med;
+
+      // slide window right: remove column (x-half), add column (x+half+1)
+      const xOut = x - half, xIn = x + half + 1;
+      if (xOut >= 0) {
+        for (let yy = y1; yy <= y2; yy++) { hist[gray[yy * w + xOut] | 0]--; count--; }
+      }
+      if (xIn < w) {
+        for (let yy = y1; yy <= y2; yy++) { hist[gray[yy * w + xIn] | 0]++; count++; }
+      }
+    }
+  }
+  return out;
+}
+
+// Prominence-based peak finding — approximates scipy.signal.find_peaks
+// with prominence + distance constraints (no wlen window, matching the
+// Python call signature used here).
+function findPeaksProminence(signal, minProminence, minDistance) {
+  const n = signal.length;
+  const candidates = [];
+
+  // local maxima (allow flat-top plateaus by taking the plateau's midpoint)
+  let i = 1;
+  while (i < n - 1) {
+    if (signal[i - 1] < signal[i]) {
+      let j = i;
+      while (j < n - 1 && signal[j] === signal[j + 1]) j++;
+      if (j < n - 1 && signal[j + 1] < signal[j]) {
+        candidates.push(Math.floor((i + j) / 2));
+      }
+      i = j + 1;
+    } else {
+      i++;
+    }
+  }
+
+  // compute prominence for each candidate (topographic prominence,
+  // unbounded window — matches scipy's default when wlen isn't passed)
+  function prominenceOf(peakIdx) {
+    const peakVal = signal[peakIdx];
+    let leftMin = peakVal;
+    for (let k = peakIdx - 1; k >= 0; k--) {
+      if (signal[k] > peakVal) break;
+      if (signal[k] < leftMin) leftMin = signal[k];
+    }
+    let rightMin = peakVal;
+    for (let k = peakIdx + 1; k < n; k++) {
+      if (signal[k] > peakVal) break;
+      if (signal[k] < rightMin) rightMin = signal[k];
+    }
+    return peakVal - Math.max(leftMin, rightMin);
+  }
+
+  let peaks = candidates
+    .map(idx => ({ idx, prominence: prominenceOf(idx), height: signal[idx] }))
+    .filter(p => p.prominence >= minProminence);
+
+  // distance constraint: process tallest-first, drop weaker peaks within minDistance
+  peaks.sort((a, b) => b.height - a.height);
+  const kept = [];
+  for (const p of peaks) {
+    if (kept.every(k => Math.abs(k.idx - p.idx) >= minDistance)) {
+      kept.push(p);
+    }
+  }
+  kept.sort((a, b) => a.idx - b.idx);
+  return kept;
+}
+
+/**
+ * Full detection pipeline. Returns positions in FULL-RESOLUTION image
+ * coordinates (already scaled up from the detection proxy), plus a
+ * status string matching Code 2's get_auto_crops conventions.
+ */
+function detectStripPositions(imgEl, roiWidth = 50, yMargin = 180, estimatedLineDist = 500) {
+  const { canvas, ctx, scale, w, h } = drawDownsampled(imgEl, DETECT_MAX_DIM);
+  let imgData = ctx.getImageData(0, 0, w, h);
+  let data = imgData.data;
+
+  function buildMask(d) {
+    const mask = new Uint8Array(w * h);
+    for (let p = 0; p < w * h; p++) {
+      const r = d[p*4], g = d[p*4+1], b = d[p*4+2];
+      const hsv = rgbToHsvCV(r, g, b);
+      mask[p] = isGreenHSV(hsv.h, hsv.s, hsv.v) ? 1 : 0;
+    }
+    return mask;
+  }
+
+  let mask = buildMask(data);
+  let blob = findLargestGreenBlob(mask, w, h);
+  if (!blob) return { status: 'No green marker found' };
+
+  let flipped = false;
+  if (blob.cx < w / 2) {
+    flipped = true;
+  }
+
+  if (flipped) {
+    // Redraw from the source image with a horizontal flip transform
+    // (flipping a canvas onto itself is unreliable — draw fresh instead).
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(imgEl, 0, 0, w, h);
+    ctx.restore();
+    imgData = ctx.getImageData(0, 0, w, h);
+    data = imgData.data;
+    mask = buildMask(data);
+    blob = findLargestGreenBlob(mask, w, h);
+    if (!blob) return { status: 'No green marker found' };
+  }
+
+  const markerX = blob.minX;
+  const yCenter = Math.round((blob.minY + blob.maxY) / 2);
+
+  // Build the intensity signal on the (possibly flipped) downsampled proxy
+  const yMarginProxy = Math.max(1, Math.round(yMargin * scale));
+  const y1 = Math.max(0, yCenter - yMarginProxy);
+  const y2 = Math.min(h, yCenter + yMarginProxy);
+  const stripW = markerX, stripH = y2 - y1;
+  if (stripW < 3 || stripH < 3) return { status: 'No lines detected' };
+
+  const gray = new Float64Array(stripW * stripH);
+  for (let yy = 0; yy < stripH; yy++) {
+    for (let xx = 0; xx < stripW; xx++) {
+      const p = (y1 + yy) * w + xx;
+      gray[yy * stripW + xx] = rgbToGray(data[p*4], data[p*4+1], data[p*4+2]);
+    }
+  }
+
+  const blurred = medianBlur2D(gray, stripW, stripH, 15);
+
+  const signal = new Float64Array(stripW);
+  for (let xx = 0; xx < stripW; xx++) {
+    let sum = 0;
+    for (let yy = 0; yy < stripH; yy++) sum += blurred[yy * stripW + xx];
+    signal[xx] = 255 - (sum / stripH);
+  }
+
+  // Peak params are in ORIGINAL pixel units in the Python code — scale
+  // them down to proxy-pixel units since our signal is on the proxy.
+  const distanceProxy = Math.max(1, Math.round(50 * scale));
+  let peaks = findPeaksProminence(signal, 15, distanceProxy);
+
+  let testIdxProxy, controlIdxProxy, status;
+
+  if (peaks.length === 0) {
+    return { status: 'No lines detected' };
+  } else if (peaks.length === 1) {
+    const singlePeak = peaks[0].idx;
+    const estDistProxy = estimatedLineDist * scale;
+    if (singlePeak < markerX / 2) {
+      controlIdxProxy = singlePeak;
+      testIdxProxy = Math.min(controlIdxProxy + estDistProxy, markerX - (roiWidth * scale) / 2);
+      status = 'Success (Negative 1-Line)';
+    } else {
+      testIdxProxy = singlePeak;
+      controlIdxProxy = Math.max(testIdxProxy - estDistProxy, (roiWidth * scale) / 2);
+      status = 'Success (Invalid 1-Line)';
+    }
+  } else {
+    let sortedPeaks = peaks;
+    if (sortedPeaks.length > 2) {
+      sortedPeaks = [...sortedPeaks].sort((a, b) => b.prominence - a.prominence).slice(0, 2);
+    }
+    sortedPeaks = [...sortedPeaks].sort((a, b) => b.idx - a.idx);
+    testIdxProxy = sortedPeaks[0].idx;
+    controlIdxProxy = sortedPeaks[sortedPeaks.length - 1].idx;
+    status = 'Success (Positive 2-Lines)';
+  }
+
+  // Scale everything back up to FULL RESOLUTION coordinates
+  const invScale = 1 / scale;
+  const testIdxFull = Math.round(testIdxProxy * invScale);
+  const controlIdxFull = Math.round(controlIdxProxy * invScale);
+  const yCenterFull = Math.round(yCenter * invScale);
+
+  return {
+    status,
+    flipped,
+    testIdx: testIdxFull,
+    controlIdx: controlIdxFull,
+    yCenter: yCenterFull,
+    scale,
+  };
+}
+
+
+// ============================================================
+// Pure-JS XGBoost tree-ensemble evaluator.
+// Mirrors xgb_pure.py exactly: identity link for reg:squarederror,
+// sigmoid + probability->margin base_score conversion for binary:logistic.
+// ============================================================
+
+function evalTree(tree, x) {
+  let node = 0;
+  const { l, r, si, sc, dl } = tree;
+  while (l[node] !== -1) {
+    const val = x[si[node]];
+    let goLeft;
+    if (val === null || val === undefined || Number.isNaN(val)) {
+      goLeft = !!dl[node];
+    } else {
+      goLeft = val < sc[node];
+    }
+    node = goLeft ? l[node] : r[node];
+  }
+  return sc[node];
+}
+
+function xgbPredict(model, featureDict) {
+  const x = model.feature_names.map(name => {
+    const v = featureDict[name];
+    return (v === undefined) ? NaN : v;
+  });
+
+  let treeSum = 0;
+  for (const t of model.trees) {
+    treeSum += evalTree(t, x);
+  }
+
+  if (model.objective === 'binary:logistic') {
+    const bs = model.base_score;
+    const baseMargin = Math.log(bs / (1 - bs));
+    const rawMargin = baseMargin + treeSum;
+    return 1 / (1 + Math.exp(-rawMargin));
+  } else if (model.objective === 'reg:squarederror') {
+    return model.base_score + treeSum;
+  } else {
+    throw new Error('Unhandled objective: ' + model.objective);
+  }
+}
+
+
+// ============================================================
+// Full pipeline: detect -> extract full-res crops (flip-aware) ->
+// 93 features -> classifier + regressor
+// ============================================================
+
+function getPixelsInBox(ctx, cx, y1, y2, halfWidth) {
+  const x1 = Math.max(0, Math.round(cx - halfWidth));
+  const x2 = Math.round(cx + halfWidth);
+  const w = Math.max(1, x2 - x1);
+  const h = Math.max(1, y2 - y1);
+  const data = ctx.getImageData(x1, y1, w, h).data;
+  const pixels = [];
+  for (let i = 0; i < data.length; i += 4) {
+    pixels.push({ r: data[i], g: data[i+1], b: data[i+2] });
+  }
+  return pixels;
+}
+
+function avgRGB(pixels) {
+  let r = 0, g = 0, b = 0;
+  for (const p of pixels) { r += p.r; g += p.g; b += p.b; }
+  const n = pixels.length;
+  return { r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n) };
+}
+
+function runFullStripPipeline(imgEl, classifierModel, regressorModel, roiWidth = 50, yMargin = 180) {
+  const det = detectStripPositions(imgEl, roiWidth, yMargin);
+  if (!det.status || !det.status.startsWith('Success')) {
+    return { ok: false, status: det.status || 'Unknown error' };
+  }
+
+  const fullCanvas = document.createElement('canvas');
+  fullCanvas.width = imgEl.naturalWidth;
+  fullCanvas.height = imgEl.naturalHeight;
+  const fullCtx = fullCanvas.getContext('2d');
+  if (det.flipped) {
+    fullCtx.save();
+    fullCtx.translate(fullCanvas.width, 0);
+    fullCtx.scale(-1, 1);
+    fullCtx.drawImage(imgEl, 0, 0);
+    fullCtx.restore();
+  } else {
+    fullCtx.drawImage(imgEl, 0, 0);
+  }
+
+  const halfW = roiWidth / 2;
+  const y1 = Math.max(0, det.yCenter - yMargin);
+  const y2 = Math.min(fullCanvas.height, det.yCenter + yMargin);
+  const bgIdx = Math.round((det.testIdx + det.controlIdx) / 2);
+
+  const bandPixels = getPixelsInBox(fullCtx, det.testIdx, y1, y2, halfW);
+  const upperPixels = getPixelsInBox(fullCtx, det.controlIdx, y1, y2, halfW);
+  const bgPixels = getPixelsInBox(fullCtx, bgIdx, y1, y2, halfW);
+
+  const features = buildFeatureDict93(bandPixels, bgPixels, upperPixels, det.testIdx, det.controlIdx);
+
+  const clfProb = xgbPredict(classifierModel, features);
+  const predClass = clfProb >= 0.5 ? 'positive' : 'negative';
+  const predConc = predClass === 'positive' ? xgbPredict(regressorModel, features) : 0;
+
+  return {
+    ok: true,
+    status: det.status,
+    clfProb,
+    predClass,
+    predConc,
+    testIdx: det.testIdx,
+    controlIdx: det.controlIdx,
+    yCenter: det.yCenter,
+    bandRGB: avgRGB(bandPixels),
+    bgRGB: avgRGB(bgPixels),
+    upperRGB: avgRGB(upperPixels),
+    features,
+  };
+}
+
+
+  let stripClfModel = null, stripRegModel = null;
+  let currentImgUrl = null;
+  let toastTimer = null;
+  let todayCount = parseInt(localStorage.getItem('cs_strip_today') || '0');
+  let todayDate = localStorage.getItem('cs_strip_today_date') || '';
+  let selectedMode = localStorage.getItem('cs_strip_mode') || 'strip';
+
+  (async () => {
+    applyI18n();
+    updateTodayCount();
+    restoreMode();
+    try {
+      stripClfModel = STRIP_CLASSIFIER_MODEL;
+      stripRegModel = STRIP_REGRESSOR_MODEL;
+      console.log('Strip models ready (pure-JS, ' + stripClfModel.trees.length + ' + ' + stripRegModel.trees.length + ' trees)');
+    } catch(e) { console.warn('Model init failed:', e); }
+  })();
+
+  function restoreMode() {
+    document.querySelectorAll('.mode-row .chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.value === selectedMode));
+    document.getElementById('modeLabelText').textContent =
+      T(selectedMode === 'membrane' ? 'mode_label_membrane' : 'mode_label_dna');
+    document.getElementById('modeBadge').textContent =
+      T(selectedMode === 'membrane' ? 'badge_membrane' : 'badge_strip');
+  }
+
+  function pickMode(el) {
+    selectedMode = el.dataset.value;
+    localStorage.setItem('cs_strip_mode', selectedMode);
+    restoreMode();
+    retake();
+  }
+
+  function updateTodayCount() {
+    const today = new Date().toDateString();
+    if (todayDate !== today) { todayCount = 0; todayDate = today; }
+    document.getElementById('todayCount').textContent = todayCount;
+  }
+  function bumpCount() {
+    const today = new Date().toDateString();
+    if (todayDate !== today) { todayCount = 0; todayDate = today; }
+    todayCount++;
+    localStorage.setItem('cs_strip_today', todayCount);
+    localStorage.setItem('cs_strip_today_date', todayDate);
+    document.getElementById('todayCount').textContent = todayCount;
+  }
+
+  // Image load
+  document.getElementById('imgInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    
+    // SHOW LOADING OVERLAY IMMEDIATELY
+    document.getElementById('analyzeOverlay').classList.add('on');
+    
+    // Use createObjectURL instead of FileReader to prevent mobile Safari memory crash
+    if (currentImgUrl && currentImgUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(currentImgUrl);
+    }
+    currentImgUrl = URL.createObjectURL(file);
+    
+    const img = document.getElementById('previewImg');
+    img.src = currentImgUrl;
+    img.style.display = 'block';
+    document.getElementById('idleHint').style.display = 'none';
+    
+    img.onload = () => {
+      // Wait 200ms to guarantee mobile browsers repaint the screen before freezing the main thread
+      setTimeout(() => {
+        if (selectedMode === 'membrane') {
+          document.getElementById('analyzeOverlay').classList.remove('on');
+          enableMembraneTap();
+        } else {
+          autoAnalyze(img);
+        }
+      }, 200);
+    };
+    
+    this.value = '';
+  });
+
+  // Auto-analyze: green-marker detection + peak-finding + 93-feature XGBoost pipeline
+  async function autoAnalyze(imgEl) {
+    if (!stripClfModel || !stripRegModel) { alert('Engine still loading, try again in a moment.'); return; }
+
+    try {
+      const result = runFullStripPipeline(imgEl, stripClfModel, stripRegModel);
+
+      if (!result.ok) {
+        let msg;
+        if (result.status === 'No green marker found') msg = T('err_no_marker');
+        else if (result.status === 'No lines detected') msg = T('err_no_lines');
+        else msg = result.status;
+        alert(msg);
+        return;
+      }
+
+      showResult(result);
+    } catch(e) {
+      console.error(e);
+      alert('Analysis error: ' + e.message);
+    } finally {
+      document.getElementById('analyzeOverlay').classList.remove('on');
+    }
+  }
+
+  function setSwatch(swId, rgbId, f) {
+    const r=Math.round(f.R_mean),g=Math.round(f.G_mean),b=Math.round(f.B_mean);
+    document.getElementById(swId).style.background=`rgb(${r},${g},${b})`;
+    document.getElementById(rgbId).textContent=`${r} · ${g} · ${b}`;
+  }
+
+  // ============================================================
+  //  MEMBRANE MODE — user taps the zone to sample its color
+  // ============================================================
+  let membraneTapHandler = null;
+
+  function enableMembraneTap() {
+    const img = document.getElementById('previewImg');
+    disableMembraneTap(); // clear any stale listener BEFORE setting the visible hint,
+                           // since this also resets tapHint display — doing it first
+                           // avoids immediately undoing the 'flex' set below.
+    document.getElementById('tapHint').style.display = 'flex';
+    document.getElementById('tapMarker').style.display = 'none';
+    membraneTapHandler = (e) => onMembraneTap(e, img);
+    img.addEventListener('click', membraneTapHandler);
+  }
+
+  function disableMembraneTap() {
+    if (membraneTapHandler) {
+      document.getElementById('previewImg').removeEventListener('click', membraneTapHandler);
+      membraneTapHandler = null;
+    }
+    document.getElementById('tapHint').style.display = 'none';
+  }
+
+  // Maps a click/tap position to natural-pixel coordinates on an
+  // object-fit:contain image (accounts for letterboxing on the short axis).
+  function getNaturalCoords(e, imgEl) {
+    const rect = imgEl.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const scale = Math.min(rect.width / imgEl.naturalWidth, rect.height / imgEl.naturalHeight);
+    const dispW = imgEl.naturalWidth * scale, dispH = imgEl.naturalHeight * scale;
+    const offX = (rect.width - dispW) / 2, offY = (rect.height - dispH) / 2;
+
+    const natX = (clickX - offX) / scale, natY = (clickY - offY) / scale;
+    if (natX < 0 || natY < 0 || natX > imgEl.naturalWidth || natY > imgEl.naturalHeight) {
+      return null; // tapped the letterbox padding, not the image itself
+    }
+    return { x: natX, y: natY, clickX, clickY };
+  }
+
+  function sampleColorAt(imgEl, natX, natY, boxSize = 24) {
+    const half = boxSize / 2;
+    const x1 = Math.max(0, Math.round(natX - half)), y1 = Math.max(0, Math.round(natY - half));
+    const x2 = Math.min(imgEl.naturalWidth, Math.round(natX + half)), y2 = Math.min(imgEl.naturalHeight, Math.round(natY + half));
+    const w = Math.max(1, x2 - x1), h = Math.max(1, y2 - y1);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(imgEl, x1, y1, w, h, 0, 0, w, h);
+    const d = c.getContext('2d').getImageData(0, 0, w, h).data;
+    let r=0,g=0,b=0,n=0;
+    for (let i=0; i<d.length; i+=4) { r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
+    return { r: Math.round(r/n), g: Math.round(g/n), b: Math.round(b/n) };
+  }
+
+  function rgbToHsv(r, g, b) {
+    r/=255; g/=255; b/=255;
+    const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
+    let h=0;
+    if (d !== 0) {
+      if (mx===r) h = ((g-b)/d) % 6;
+      else if (mx===g) h = (b-r)/d + 2;
+      else h = (r-g)/d + 4;
+      h *= 60; if (h<0) h += 360;
+    }
+    return { h, s: mx===0 ? 0 : (d/mx)*100, v: mx*100 };
+  }
+
+  // NOTE: these hue/saturation/value thresholds are a heuristic, tuned against
+  // real samples as they come in. Confirmed: RGB(78,68,114) / H≈253° == Negative.
+  // Blue ~195-248°, purple ~248-322°. Send more reference readings to refine further.
+  function classifyMembrane(hsv) {
+    const { h, s, v } = hsv;
+    if (s < 12 || v > 88) {
+      return { labelKey: 'lbl_inconclusive', pill: 'unknown', reasonKey: 'reason_no_color' };
+    }
+    if (h >= 195 && h <= 248) {
+      return { labelKey: 'lbl_positive', pill: 'positive', reasonKey: 'reason_dark_blue' };
+    }
+    if (h > 248 && h <= 322) {
+      return { labelKey: 'lbl_negative', pill: 'negative', reasonKey: 'reason_dark_purple' };
+    }
+    return { labelKey: 'lbl_inconclusive', pill: 'unknown', reasonKey: 'reason_not_blue_purple' };
+  }
+
+  function onMembraneTap(e, imgEl) {
+    const coords = getNaturalCoords(e, imgEl);
+    if (!coords) return; // tapped outside the image itself — keep waiting
+
+    disableMembraneTap();
+
+    const marker = document.getElementById('tapMarker');
+    marker.style.left = coords.clickX + 'px';
+    marker.style.top = coords.clickY + 'px';
+    marker.style.display = 'block';
+
+    const rgb = sampleColorAt(imgEl, coords.x, coords.y);
+    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    const result = classifyMembrane(hsv);
+
+    showMembraneResult(rgb, hsv, result);
+  }
+
+  function showMembraneResult(rgb, hsv, result) {
+    const label = T(result.labelKey);
+    const reason = T(result.reasonKey);
+
+    document.getElementById('resultLabelText').textContent = T('membrane_result_title');
+    document.getElementById('resultSub').textContent = reason;
+
+    const pill = document.getElementById('statusPill');
+    pill.className = 'status-pill ' + result.pill;
+    pill.textContent = label;
+
+    document.getElementById('mResultLabel').textContent = label;
+    document.getElementById('swatchMembrane').style.background = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+    document.getElementById('rgbMembrane').textContent = `${rgb.r} · ${rgb.g} · ${rgb.b}`;
+    document.getElementById('mHue').textContent = Math.round(hsv.h) + '°';
+    document.getElementById('mSat').textContent = Math.round(hsv.s) + '%';
+    document.getElementById('mVal').textContent = Math.round(hsv.v) + '%';
+    document.getElementById('mTime').textContent =
+      new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+    document.getElementById('stripResultBlock').style.display = 'none';
+    document.getElementById('membraneResultBlock').style.display = 'block';
+
+    if (currentImgUrl) {
+      const t = document.getElementById('resultThumb');
+      t.src = currentImgUrl; t.style.display = 'block';
+    }
+
+    document.getElementById('resultSheet').classList.add('open');
+    autoSaveMembrane({ label, pill: result.pill }, rgb);
+    bumpCount();
+  }
+
+  function autoSaveMembrane(result, rgb) {
+    const record = {
+      filename: Date.now() + '_membrane.jpg',
+      date: new Date().toISOString(),
+      conc: 0,
+      mode: 'membrane',
+      result: result.label,
+      color: `rgb(${rgb.r},${rgb.g},${rgb.b})`,
+      imgBase64: ""
+    };
+    const req = indexedDB.open('ChromaSnapLocalDB', 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('Strip'))
+        db.createObjectStore('Strip', { autoIncrement: true });
+    };
+    req.onsuccess = e => {
+      e.target.result.transaction('Strip','readwrite').objectStore('Strip').add(record);
+    };
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function showResult(result) {
+    const { predClass, predConc, bandRGB, bgRGB, upperRGB } = result;
+
+    document.getElementById('resultLabelText').textContent = T('strip_result_title');
+    document.getElementById('resultSub').textContent = T('sub_dna_analysis');
+    const pill = document.getElementById('statusPill');
+    pill.className = 'status-pill ' + (predClass === 'positive' ? 'positive' : 'negative');
+    pill.textContent = T(predClass === 'positive' ? 'lbl_positive' : 'lbl_negative');
+    document.getElementById('stripResultBlock').style.display = 'block';
+    document.getElementById('membraneResultBlock').style.display = 'none';
+
+    const conc = predConc.toFixed(2);
+    document.getElementById('rConc').textContent = conc;
+    document.getElementById('rTime').textContent =
+      new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('mBandR').textContent = bandRGB.r;
+    document.getElementById('mBandG').textContent = bandRGB.g;
+
+    setSwatch('swatchResult','rgbResult', {R_mean:bandRGB.r, G_mean:bandRGB.g, B_mean:bandRGB.b});
+    setSwatch('swatchBg',   'rgbBg',    {R_mean:bgRGB.r, G_mean:bgRGB.g, B_mean:bgRGB.b});
+    setSwatch('swatchCtrl', 'rgbCtrl',  {R_mean:upperRGB.r, G_mean:upperRGB.g, B_mean:upperRGB.b});
+
+    if(currentImgUrl){
+      const t=document.getElementById('resultThumb');
+      t.src=currentImgUrl; t.style.display='block';
+    }
+
+    document.getElementById('resultSheet').classList.add('open');
+    autoSave(conc);
+    bumpCount();
+  }
+
+  function autoSave(conc) {
+    const record={
+      filename:Date.now()+'_strip.jpg',
+      date:new Date().toISOString(),
+      conc:parseFloat(conc)||0,
+      // We don't save the full image base64 anymore to save space, just a placeholder or small thumb
+      imgBase64: "" 
+    };
+    const req=indexedDB.open('ChromaSnapLocalDB',1);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('Strip'))
+        db.createObjectStore('Strip',{autoIncrement:true});
+    };
+    req.onsuccess=e=>{
+      e.target.result.transaction('Strip','readwrite').objectStore('Strip').add(record);
+    };
+    const t=document.getElementById('toast');
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+  }
+
+  function undoSave(){
+    clearTimeout(toastTimer);
+    document.getElementById('toast').classList.remove('show');
+    todayCount=Math.max(0,todayCount-1);
+    document.getElementById('todayCount').textContent=todayCount;
+    localStorage.setItem('cs_strip_today',todayCount);
+  }
+
+  function saveAndClose(){
+    document.getElementById('resultSheet').classList.remove('open');
+  }
+  function retake(){
+    document.getElementById('resultSheet').classList.remove('open');
+    document.getElementById('previewImg').style.display='none';
+    document.getElementById('idleHint').style.display='flex';
+    document.getElementById('resultThumb').style.display='none';
+    disableMembraneTap();
+    document.getElementById('tapMarker').style.display='none';
+    currentImgUrl=null;
+  }
+  function handleBgClick(e){
+    if(e.target===document.getElementById('resultSheet'))
+      document.getElementById('resultSheet').classList.remove('open');
+  }
+
+  // Swipe down to close
+  let sy=0;
+  document.getElementById('sheetBody').addEventListener('touchstart',e=>{sy=e.touches[0].clientY;},{passive:true});
+  document.getElementById('sheetBody').addEventListener('touchend',e=>{
+    if(e.changedTouches[0].clientY-sy>70) document.getElementById('resultSheet').classList.remove('open');
+  },{passive:true});
+  </script>
+</body>
+</html>
